@@ -14,12 +14,27 @@ import { Score } from './entities/score.entity';
     ConfigModule.forRoot({
       isGlobal: true,
     }),
-    TypeOrmModule.forRoot({
-      type: 'sqljs',
-      location: 'database.sqlite',
-      autoSave: true,
-      entities: [WeeklySeed, Score],
-      synchronize: true, // Désactiver en production
+    TypeOrmModule.forRootAsync({
+      useFactory: () => {
+        if (process.env.NODE_ENV === 'test') {
+          return {
+            type: 'sqljs',
+            location: ':memory:',
+            entities: [WeeklySeed, Score],
+            synchronize: true,
+          };
+        }
+        return {
+          type: 'postgres',
+          host: process.env.DATABASE_HOST || 'localhost',
+          port: parseInt(process.env.DATABASE_PORT ?? '5432', 10),
+          username: process.env.DATABASE_USER || 'postgres',
+          password: process.env.DATABASE_PASSWORD || 'postgres',
+          database: process.env.DATABASE_NAME || 'async_weekly_seed',
+          entities: [WeeklySeed, Score],
+          synchronize: true, // Désactiver en production
+        };
+      },
     }),
     TypeOrmModule.forFeature([WeeklySeed, Score]),
     ScheduleModule.forRoot(),

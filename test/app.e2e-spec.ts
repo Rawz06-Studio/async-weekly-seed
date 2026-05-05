@@ -5,9 +5,10 @@ import { AppModule } from './../src/app.module';
 
 describe('AppController (e2e)', () => {
   let app: NestExpressApplication;
+  let moduleFixture: TestingModule;
 
   beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
+    moduleFixture = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
@@ -29,7 +30,17 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer()).get('/archives').expect(200);
   });
 
-  it('/score (POST) - redirect', () => {
+  it('/score (POST) - redirect', async () => {
+    // Ensure there is an active seed in the DB before posting a score
+    const seedRepo = moduleFixture.get('WeeklySeedRepository');
+    await seedRepo.save({
+      seedUrl: 'http://test-seed.com',
+      preset: 'test-preset',
+      version: '1.0',
+      settings: '{}',
+      isActive: true,
+    });
+
     return request(app.getHttpServer())
       .post('/score')
       .send({ playerName: 'E2E Player', time: '1:00:00' })

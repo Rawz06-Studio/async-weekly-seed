@@ -39,9 +39,7 @@ COPY --from=build /app/package.json ./package.json
 COPY --from=build /app/views ./views
 COPY --from=build /app/public ./public
 
-# The database file should be persisted, so we might want to use a volume.
-# For now, we just ensure the app can run.
-# SQLite file will be created at /app/database.sqlite by default in AppModule
+# PostgreSQL connection details should be provided via environment variables at runtime.
 
 EXPOSE 3000
 
