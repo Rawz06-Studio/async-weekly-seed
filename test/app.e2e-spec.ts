@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
+import { WeeklySeed } from '../src/entities/weekly-seed.entity';
+import { Repository } from 'typeorm';
 
 describe('AppController (e2e)', () => {
   let app: NestExpressApplication;
@@ -32,7 +34,9 @@ describe('AppController (e2e)', () => {
 
   it('/score (POST) - redirect', async () => {
     // Ensure there is an active seed in the DB before posting a score
-    const seedRepo = moduleFixture.get('WeeklySeedRepository');
+    const seedRepo: Repository<WeeklySeed> = moduleFixture.get(
+      'WeeklySeedRepository',
+    );
     await seedRepo.save({
       seedUrl: 'http://test-seed.com',
       preset: 'test-preset',
