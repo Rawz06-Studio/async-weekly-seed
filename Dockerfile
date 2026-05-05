@@ -12,8 +12,14 @@ COPY package.json pnpm-lock.yaml ./
 # Install dependencies
 RUN pnpm install
 
+# Approved builds for certain dependencies (required by pnpm v10+)
+RUN pnpm approve-builds
+
 # Copy source code
 COPY . .
+
+# Ensure public directory exists even if empty (avoid COPY failure)
+RUN mkdir -p public
 
 # Build the application
 RUN npm run build
