@@ -38,7 +38,7 @@ describe('AppController (e2e)', () => {
       'WeeklySeedRepository',
     );
     await seedRepo.save({
-      seedUrl: 'http://test-seed.com',
+      seedUrl: 'http://test-seed',
       preset: 'test-preset',
       version: '1.0',
       settings: '{}',
