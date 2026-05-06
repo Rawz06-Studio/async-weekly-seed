@@ -150,7 +150,7 @@ describe('AppService', () => {
   describe('generateNewSeed', () => {
     it('should generate a new seed and save it', async () => {
       const data = {
-        seedUrl: 'http://newseed',
+        seedUrl: 'https://newseed',
         version: '1.0',
         usedSettings: { opt: true },
       };
