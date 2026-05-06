@@ -22,7 +22,7 @@ export class AppService implements OnModuleInit {
     @InjectRepository(Score)
     private scoreRepository: Repository<Score>,
     private configService: ConfigService,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     const currentSeed = await this.getCurrentSeed();
@@ -55,16 +55,11 @@ export class AppService implements OnModuleInit {
     });
   }
 
-  @Cron('0 20 * * 3') // Par défaut Mercredi 20h, mais on peut ajuster dynamiquement si besoin
+  @Cron('0 20 * * 3', {
+    timeZone: 'Europe/Paris',
+  })
   async handleCron() {
-    const day = this.configService.get<number>('SEED_CHANGE_DAY', 3);
-    const hour = this.configService.get<number>('SEED_CHANGE_HOUR', 20);
-
-    const now = new Date();
-    if (now.getDay() === Number(day) && now.getHours() === Number(hour)) {
-      this.logger.log('Time to change the seed!');
-      await this.generateNewSeed();
-    }
+    await this.generateNewSeed();
   }
 
   async generateNewSeed() {
