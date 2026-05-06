@@ -34,6 +34,10 @@
                         <span class="text-2xl font-semibold"><%= seed.version %></span>
                     </div>
                     <div class="text-center">
+                        <span class="block text-gray-500 dark:text-gray-400 uppercase text-xs">Generated at</span>
+                        <span class="text-2xl font-semibold"><%= seed.createdAt %></span>
+                    </div>
+                    <div class="text-center">
                         <a href="<%= seed.seedUrl %>" target="_blank" class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-full transition duration-300 shadow-lg">
                             Download Seed
                         </a>
