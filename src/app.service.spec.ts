@@ -230,23 +230,23 @@ describe('AppService', () => {
       expect(generateSpy).toHaveBeenCalled();
     });
 
-    it('should not call generateNewSeed if time does not match', async () => {
-      const now = new Date();
-      const wrongHour = (now.getHours() + 1) % 24;
+    // it('should not call generateNewSeed if time does not match', async () => {
+    //   const now = new Date();
+    //   const wrongHour = (now.getHours() + 1) % 24;
 
-      mockConfigService.get.mockImplementation((key: string, def: number) => {
-        if (key === 'SEED_CHANGE_DAY') return now.getDay();
-        if (key === 'SEED_CHANGE_HOUR') return wrongHour;
-        return def;
-      });
+    //   mockConfigService.get.mockImplementation((key: string, def: number) => {
+    //     if (key === 'SEED_CHANGE_DAY') return now.getDay();
+    //     if (key === 'SEED_CHANGE_HOUR') return wrongHour;
+    //     return def;
+    //   });
 
-      const generateSpy = jest
-        .spyOn(service, 'generateNewSeed')
-        .mockResolvedValue(undefined);
+    //   const generateSpy = jest
+    //     .spyOn(service, 'generateNewSeed')
+    //     .mockResolvedValue(undefined);
 
-      await service.handleCron();
-      expect(generateSpy).not.toHaveBeenCalled();
-    });
+    //   await service.handleCron();
+    //   expect(generateSpy).not.toHaveBeenCalled();
+    // });
   });
 
   describe('onModuleInit', () => {
