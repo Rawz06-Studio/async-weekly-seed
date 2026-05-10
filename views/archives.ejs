@@ -3,55 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Archives - OoT Randomizer Async Weekly</title>
+    <title>Archives – OoT Randomizer Async Weekly</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'media',
+            theme: { extend: { fontFamily: { cinzel: ['Cinzel', 'serif'] } } }
+        }
+    </script>
     <style>
-        :root { color-scheme: light dark; }
-        body { @apply bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100; }
+        :root {
+            --body-bg: #faf7f0;
+            --body-glow: radial-gradient(ellipse 80% 40% at 50% -5%, #fef3c7 0%, transparent 70%);
+            --gold-stop: rgba(180, 83, 9, 0.45);
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --body-bg: #0d0e1a;
+                --body-glow: radial-gradient(ellipse 80% 40% at 50% -5%, #1e1040 0%, transparent 70%);
+                --gold-stop: rgba(217, 119, 6, 0.5);
+            }
+        }
+        body { background-color: var(--body-bg); background-image: var(--body-glow); }
+        .gold-line {
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--gold-stop), transparent);
+        }
     </style>
 </head>
-<body class="min-h-screen font-sans bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100">
-    <nav class="bg-gray-100 dark:bg-gray-800 p-4 shadow-lg">
-        <div class="container mx-auto flex justify-between items-center">
-            <a href="/" class="text-xl font-bold text-green-600 dark:text-green-400">OoTR Async Weekly</a>
-            <div>
-                <a href="/archives" class="text-white mx-2 font-bold underline">Archives</a>
-            </div>
+
+<body class="min-h-screen font-sans text-gray-900 dark:text-gray-100 transition-colors duration-300">
+
+    <nav class="sticky top-0 z-10 backdrop-blur-md bg-amber-50/80 dark:bg-black/50 border-b border-amber-200 dark:border-amber-800/30 transition-colors duration-300">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="/" class="font-cinzel text-xl font-bold tracking-widest text-amber-700 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors duration-200">
+                △ OoTR Async Weekly
+            </a>
+            <span class="font-cinzel text-xs tracking-widest uppercase text-amber-600 dark:text-amber-400 border-b border-amber-400 dark:border-amber-600 pb-px">
+                Archives
+            </span>
         </div>
     </nav>
 
-    <main class="container mx-auto mt-8 px-4">
-        <h1 class="text-3xl font-bold mb-8 text-center text-blue-600 dark:text-blue-400">Seed Archives</h1>
+    <main class="container mx-auto mt-10 px-4 pb-16">
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <% if (archives && archives.length > 0) { %>
-                <% archives.forEach(seed => { %>
-                    <a href="/archive/<%= seed.id %>" class="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:border-green-500 dark:hover:border-green-500 transition duration-300 block shadow-lg">
-                        <div class="flex justify-between items-start mb-4">
-                            <span class="bg-blue-600 text-white text-xs font-bold px-2 py-1 rounded uppercase">
-                                <%= seed.preset.replace('seed_', '') %>
-                            </span>
-                            <span class="text-gray-500 dark:text-gray-400 text-sm">
-                                <%= new Date(seed.createdAt).toLocaleDateString('en-US') %>
-                            </span>
-                        </div>
-                        <div class="text-xl font-bold mb-2">Seed #<%= seed.id %></div>
-                        <div class="text-gray-600 dark:text-gray-400 text-sm">
-                            <%= seed.scores.length %> participants
-                        </div>
-                        <div class="mt-4 text-green-600 dark:text-green-400 font-semibold text-sm">View standings &rarr;</div>
-                    </a>
-                <% }) %>
-            <% } else { %>
-                <div class="col-span-full text-center p-12 bg-white dark:bg-gray-800 rounded-lg text-gray-500 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
-                    No archives yet.
-                </div>
-            <% } %>
+        <h1 class="font-cinzel text-4xl font-bold text-center tracking-wider mb-2 text-amber-700 dark:text-amber-400">
+            Archives
+        </h1>
+        <p class="text-center text-xs mb-8 tracking-widest font-cinzel text-stone-400 dark:text-gray-600">
+            Past weekly seeds & standings
+        </p>
+        <div class="gold-line max-w-xs mx-auto mb-10"></div>
+
+        <% if (archives && archives.length > 0) { %>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+            <% archives.forEach(seed => { %>
+                <%
+                    const presetKey = seed.preset.replace('seed_', '');
+                    const badgeLight = { s9: 'bg-amber-100 text-amber-800 border-amber-300', tot: 'bg-purple-100 text-purple-800 border-purple-300', mixed: 'bg-emerald-100 text-emerald-800 border-emerald-300', rsl: 'bg-red-100 text-red-800 border-red-300' };
+                    const badgeDark  = { s9: 'dark:bg-amber-900/50 dark:text-amber-300 dark:border-amber-700/50', tot: 'dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700/50', mixed: 'dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-700/50', rsl: 'dark:bg-red-900/50 dark:text-red-300 dark:border-red-700/50' };
+                    const bl = badgeLight[presetKey] || 'bg-blue-100 text-blue-800 border-blue-300';
+                    const bd = badgeDark[presetKey]  || 'dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700/50';
+                %>
+                <a href="/archive/<%= seed.id %>"
+                    class="group block
+                           bg-white/80 dark:bg-gray-900/70
+                           border border-amber-200 dark:border-amber-800/20
+                           hover:border-amber-400 dark:hover:border-amber-600/50
+                           rounded-xl p-6 shadow-sm hover:shadow-md hover:shadow-amber-100 dark:hover:shadow-amber-900/20
+                           hover:-translate-y-0.5
+                           transition-all duration-200">
+                    <div class="flex justify-between items-start mb-4">
+                        <span class="font-cinzel text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded border
+                                     <%= bl %> <%= bd %> transition-colors duration-200">
+                            <%= presetKey %>
+                        </span>
+                        <span class="text-xs font-cinzel text-stone-400 dark:text-gray-600">
+                            <%= new Date(seed.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) %>
+                        </span>
+                    </div>
+                    <div class="font-cinzel text-xl font-bold mb-2
+                                text-gray-800 dark:text-gray-200
+                                group-hover:text-amber-700 dark:group-hover:text-amber-300
+                                transition-colors duration-200">
+                        Seed #<%= seed.id %>
+                    </div>
+                    <div class="text-sm mb-5 text-stone-400 dark:text-gray-600">
+                        <%= seed.scores.length %> participant<%= seed.scores.length !== 1 ? 's' : '' %>
+                    </div>
+                    <div class="gold-line"></div>
+                    <div class="mt-4 font-cinzel text-xs tracking-widest uppercase
+                                text-amber-500 dark:text-amber-700
+                                group-hover:text-amber-600 dark:group-hover:text-amber-500
+                                transition-colors duration-200">
+                        View standings →
+                    </div>
+                </a>
+            <% }) %>
         </div>
+        <% } else { %>
+        <div class="text-center py-24 font-cinzel">
+            <p class="text-xl tracking-wide text-stone-400 dark:text-gray-600">No archives yet.</p>
+        </div>
+        <% } %>
+
     </main>
 
-    <footer class="mt-12 p-8 text-center text-gray-500 dark:text-gray-400 text-sm">
-        &copy; 2026 OoT Randomizer Async Weekly
+    <footer class="mt-4 pb-8 text-center">
+        <div class="gold-line max-w-xs mx-auto mb-6"></div>
+        <p class="font-cinzel text-xs tracking-widest uppercase text-stone-300 dark:text-gray-700">
+            &copy; 2026 OoT Randomizer Async Weekly
+        </p>
     </footer>
+
 </body>
 </html>
