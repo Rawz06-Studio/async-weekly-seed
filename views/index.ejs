@@ -108,12 +108,26 @@
                                 </thead>
                                 <tbody>
                                     <% if (seed.scores && seed.scores.length> 0) { %>
-                                        <% const sortedScores=seed.scores.sort((a, b)=> {
-                                            if (a.time === 'Forfeit' && b.time === 'Forfeit') return 0;
-                                            if (a.time === 'Forfeit') return 1;
-                                            if (b.time === 'Forfeit') return -1;
-                                            return a.time.localeCompare(b.time);
+                                        <% const timeToSeconds=(timeStr)=> {
+                                            if (timeStr === 'Forfeit') return Infinity; // Les forfaits sont les
+                                            derniers
+                                            const parts = timeStr.split(':');
+                                            let seconds = 0;
+                                            if (parts.length === 3) { // Format H:MM:SS ou HH:MM:SS
+                                            seconds = parseInt(parts[0]) * 3600 + parseInt(parts[1]) * 60 +
+                                            parseInt(parts[2]);
+                                            } else if (parts.length === 2) { // Format MM:SS
+                                            seconds = parseInt(parts[0]) * 60 + parseInt(parts[1]);
+                                            }
+                                            return seconds;
+                                            };
+
+                                            const sortedScores = seed.scores.sort((a, b) => {
+                                            const timeA = timeToSeconds(a.time);
+                                            const timeB = timeToSeconds(b.time);
+                                            return timeA - timeB;
                                             });
+
                                             sortedScores.forEach((score, index) => {
                                             %>
                                             <tr

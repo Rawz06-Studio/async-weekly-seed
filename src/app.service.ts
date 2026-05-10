@@ -22,7 +22,7 @@ export class AppService implements OnModuleInit {
     @InjectRepository(Score)
     private scoreRepository: Repository<Score>,
     private configService: ConfigService,
-  ) { }
+  ) {}
 
   async onModuleInit() {
     const currentSeed = await this.getCurrentSeed();
