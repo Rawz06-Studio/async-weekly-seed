@@ -8,12 +8,21 @@ import { ConfigService } from '@nestjs/config';
 describe('AppService', () => {
   let service: AppService;
 
+  const mockQueryBuilder = {
+    leftJoinAndSelect: jest.fn().mockReturnThis(),
+    where: jest.fn().mockReturnThis(),
+    orderBy: jest.fn().mockReturnThis(),
+    addOrderBy: jest.fn().mockReturnThis(),
+    getOne: jest.fn(),
+  };
+
   const mockSeedRepository = {
     findOne: jest.fn(),
     find: jest.fn(),
     update: jest.fn(),
     create: jest.fn(),
     save: jest.fn(),
+    createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
   };
 
   const mockScoreRepository = {
@@ -80,16 +89,16 @@ describe('AppService', () => {
   describe('addScore', () => {
     it('should add a valid score', async () => {
       const currentSeed = { id: 1 } as WeeklySeed;
-      mockSeedRepository.findOne.mockResolvedValue(currentSeed);
+      mockQueryBuilder.getOne.mockResolvedValue(currentSeed);
       mockScoreRepository.create.mockReturnValue({
         id: 1,
         playerName: 'Player',
-        time: '1:23:45',
+        time: 5025, // 1:23:45 = 1*3600 + 23*60 + 45
       });
       mockScoreRepository.save.mockResolvedValue({
         id: 1,
         playerName: 'Player',
-        time: '1:23:45',
+        time: 5025,
       });
 
       const result = await service.addScore('Player', '1:23:45', 'GG');
@@ -98,14 +107,14 @@ describe('AppService', () => {
       expect(mockScoreRepository.create).toHaveBeenCalledWith(
         expect.objectContaining({
           playerName: 'Player',
-          time: '1:23:45',
+          time: 5025,
           seed: currentSeed,
         }),
       );
     });
 
     it('should handle forfeit strings', async () => {
-      mockSeedRepository.findOne.mockResolvedValue({ id: 1 });
+      mockQueryBuilder.getOne.mockResolvedValue({ id: 1 });
       mockScoreRepository.create.mockImplementation(
         (args: unknown) => args as Score,
       );
@@ -114,24 +123,24 @@ describe('AppService', () => {
       );
 
       const res1 = await service.addScore('P1', 'ff', '');
-      expect(res1.time).toBe('Forfeit');
+      expect(res1.time).toBeNull();
 
       const res2 = await service.addScore('P2', 'forfeit', '');
-      expect(res2.time).toBe('Forfeit');
+      expect(res2.time).toBeNull();
 
       const res3 = await service.addScore('P3', '', '');
-      expect(res3.time).toBe('Forfeit');
+      expect(res3.time).toBeNull();
     });
 
     it('should throw error for invalid time format', async () => {
-      mockSeedRepository.findOne.mockResolvedValue({ id: 1 });
+      mockQueryBuilder.getOne.mockResolvedValue({ id: 1 });
       await expect(service.addScore('P', 'invalid', '')).rejects.toThrow(
         'Invalid time format',
       );
     });
 
     it('should throw error if no active seed', async () => {
-      mockSeedRepository.findOne.mockResolvedValue(null);
+      mockQueryBuilder.getOne.mockResolvedValue(null);
       await expect(service.addScore('P', '1:00', '')).rejects.toThrow(
         'No active seed found',
       );
@@ -141,7 +150,7 @@ describe('AppService', () => {
   describe('getCurrentSeed', () => {
     it('should return the active seed', async () => {
       const seed = { id: 1, isActive: true };
-      mockSeedRepository.findOne.mockResolvedValue(seed);
+      mockQueryBuilder.getOne.mockResolvedValue(seed);
       const result = await service.getCurrentSeed();
       expect(result).toBe(seed);
     });
@@ -251,7 +260,7 @@ describe('AppService', () => {
 
   describe('onModuleInit', () => {
     it('should generate seed if none exists', async () => {
-      mockSeedRepository.findOne.mockResolvedValue(null);
+      mockQueryBuilder.getOne.mockResolvedValue(null);
       const generateSpy = jest
         .spyOn(service, 'generateNewSeed')
         .mockResolvedValue(undefined);
@@ -260,7 +269,7 @@ describe('AppService', () => {
     });
 
     it('should not generate seed if one exists', async () => {
-      mockSeedRepository.findOne.mockResolvedValue({ id: 1 });
+      mockQueryBuilder.getOne.mockResolvedValue({ id: 1 });
       const generateSpy = jest
         .spyOn(service, 'generateNewSeed')
         .mockResolvedValue(undefined);
@@ -272,7 +281,7 @@ describe('AppService', () => {
   describe('getArchiveById', () => {
     it('should return seed by id', async () => {
       const seed = { id: 1 };
-      mockSeedRepository.findOne.mockResolvedValue(seed);
+      mockQueryBuilder.getOne.mockResolvedValue(seed);
       const result = await service.getArchiveById(1);
       expect(result).toBe(seed);
     });

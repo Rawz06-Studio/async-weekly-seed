@@ -32,7 +32,7 @@ import { Score } from './entities/score.entity';
           password: process.env.DATABASE_PASSWORD || 'postgres',
           database: process.env.DATABASE_NAME || 'async_weekly_seed',
           entities: [WeeklySeed, Score],
-          synchronize: true, // Désactiver en production
+          synchronize: true,
         };
       },
     }),

@@ -15,8 +15,8 @@ export class Score {
   @Column()
   playerName: string;
 
-  @Column()
-  time: string; // Format HH:MM:SS, "ff", or "forfeit"
+  @Column({ type: 'int', nullable: true })
+  time: number | null; // seconds since start, null = forfeit
 
   @Column({ nullable: true })
   comment: string;

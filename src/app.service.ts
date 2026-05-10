@@ -5,6 +5,7 @@ import { WeeklySeed } from './entities/weekly-seed.entity';
 import { Score } from './entities/score.entity';
 import { Cron } from '@nestjs/schedule';
 import { ConfigService } from '@nestjs/config';
+import { timeStringToSeconds } from './utils/time';
 
 interface SeedApiResponse {
   seedUrl: string;
@@ -33,11 +34,13 @@ export class AppService implements OnModuleInit {
   }
 
   async getCurrentSeed() {
-    return await this.seedRepository.findOne({
-      where: { isActive: true },
-      relations: ['scores'],
-      order: { createdAt: 'DESC' },
-    });
+    return await this.seedRepository
+      .createQueryBuilder('seed')
+      .leftJoinAndSelect('seed.scores', 'score')
+      .where('seed.isActive = :isActive', { isActive: true })
+      .orderBy('seed.createdAt', 'DESC')
+      .addOrderBy('score.time', 'ASC', 'NULLS LAST')
+      .getOne();
   }
 
   async getArchives() {
@@ -49,10 +52,12 @@ export class AppService implements OnModuleInit {
   }
 
   async getArchiveById(id: number) {
-    return await this.seedRepository.findOne({
-      where: { id },
-      relations: ['scores'],
-    });
+    return await this.seedRepository
+      .createQueryBuilder('seed')
+      .leftJoinAndSelect('seed.scores', 'score')
+      .where('seed.id = :id', { id })
+      .addOrderBy('score.time', 'ASC', 'NULLS LAST')
+      .getOne();
   }
 
   @Cron('0 20 * * 3', {
@@ -124,28 +129,28 @@ export class AppService implements OnModuleInit {
     const currentSeed = await this.getCurrentSeed();
     if (!currentSeed) throw new Error('No active seed found');
 
-    let normalizedTime = time.trim().toLowerCase();
+    const normalizedTime = time.trim().toLowerCase();
+    let timeInSeconds: number | null;
 
-    // Support empty time, ff, forfeit
     if (
-      normalizedTime === '' ||
+      !normalizedTime ||
       normalizedTime === 'ff' ||
       normalizedTime === 'forfeit'
     ) {
-      normalizedTime = 'Forfeit';
+      timeInSeconds = null;
     } else {
-      // Basic time format validation (HH:MM:SS or MM:SS)
       const timeRegex = /^(\d{1,2}:)?([0-5]?\d):([0-5]?\d)$/;
       if (!timeRegex.test(normalizedTime)) {
         throw new Error(
           'Invalid time format. Use HH:MM:SS or MM:SS, or "ff" for forfeit',
         );
       }
+      timeInSeconds = timeStringToSeconds(normalizedTime);
     }
 
     const newScore = this.scoreRepository.create({
       playerName,
-      time: normalizedTime,
+      time: timeInSeconds,
       comment,
       vodUrl,
       seed: currentSeed,

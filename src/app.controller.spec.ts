@@ -36,7 +36,7 @@ describe('AppController', () => {
       const seed = { id: 1 };
       mockAppService.getCurrentSeed.mockResolvedValue(seed);
       const result = await controller.getHome();
-      expect(result).toEqual({ seed });
+      expect(result).toMatchObject({ seed });
     });
   });
 
@@ -72,7 +72,7 @@ describe('AppController', () => {
       const seed = { id: 123 };
       mockAppService.getArchiveById.mockResolvedValue(seed);
       const result = await controller.getArchive(123);
-      expect(result).toEqual({ seed });
+      expect(result).toMatchObject({ seed });
     });
   });
 

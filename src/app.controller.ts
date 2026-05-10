@@ -8,6 +8,7 @@ import {
   Param,
 } from '@nestjs/common';
 import { AppService } from './app.service';
+import { secondsToTimeString } from './utils/time';
 
 @Controller()
 export class AppController {
@@ -17,7 +18,7 @@ export class AppController {
   @Render('index')
   async getHome() {
     const currentSeed = await this.appService.getCurrentSeed();
-    return { seed: currentSeed };
+    return { seed: currentSeed, formatTime: secondsToTimeString };
   }
 
   @Post('score')
@@ -43,7 +44,7 @@ export class AppController {
   @Render('archive-detail')
   async getArchive(@Param('id') id: number) {
     const seed = await this.appService.getArchiveById(id);
-    return { seed };
+    return { seed, formatTime: secondsToTimeString };
   }
 
   @Post('admin/generate-seed')
