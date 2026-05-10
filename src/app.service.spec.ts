@@ -32,7 +32,7 @@ describe('AppService', () => {
   };
 
   const mockConfigService = {
-    get: jest.fn().mockImplementation((key: string, defaultVal: any) => {
+    get: jest.fn().mockImplementation((key: string, defaultVal: unknown) => {
       if (key === 'SEED_CHANGE_DAY') return 3;
       if (key === 'SEED_CHANGE_HOUR') return 20;
       return defaultVal;

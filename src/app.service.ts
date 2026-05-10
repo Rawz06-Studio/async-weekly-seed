@@ -87,7 +87,7 @@ export class AppService implements OnModuleInit {
   getNextSeedDate(): Date | null {
     try {
       const job = this.schedulerRegistry.getCronJob('weekly-seed');
-      return job.nextDate().toJSDate();
+      return new Date(Number(job.nextDate().toMillis()));
     } catch {
       return null;
     }
