@@ -4,6 +4,7 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { WeeklySeed } from './entities/weekly-seed.entity';
 import { Score } from './entities/score.entity';
 import { ConfigService } from '@nestjs/config';
+import { SchedulerRegistry } from '@nestjs/schedule';
 
 describe('AppService', () => {
   let service: AppService;
@@ -31,7 +32,16 @@ describe('AppService', () => {
   };
 
   const mockConfigService = {
-    get: jest.fn(),
+    get: jest.fn().mockImplementation((key: string, defaultVal: any) => {
+      if (key === 'SEED_CHANGE_DAY') return 3;
+      if (key === 'SEED_CHANGE_HOUR') return 20;
+      return defaultVal;
+    }),
+  };
+
+  const mockSchedulerRegistry = {
+    addCronJob: jest.fn(),
+    getCronJob: jest.fn(),
   };
 
   beforeEach(async () => {
@@ -49,6 +59,10 @@ describe('AppService', () => {
         {
           provide: ConfigService,
           useValue: mockConfigService,
+        },
+        {
+          provide: SchedulerRegistry,
+          useValue: mockSchedulerRegistry,
         },
       ],
     }).compile();
@@ -219,18 +233,7 @@ describe('AppService', () => {
   });
 
   describe('handleCron', () => {
-    it('should call generateNewSeed if time matches', async () => {
-      const now = new Date();
-      // Ensure we use the values we'll mock
-      const day = now.getDay();
-      const hour = now.getHours();
-
-      mockConfigService.get.mockImplementation((key: string, def: number) => {
-        if (key === 'SEED_CHANGE_DAY') return day;
-        if (key === 'SEED_CHANGE_HOUR') return hour;
-        return def;
-      });
-
+    it('should call generateNewSeed', async () => {
       const generateSpy = jest
         .spyOn(service, 'generateNewSeed')
         .mockResolvedValue(undefined);
@@ -238,24 +241,6 @@ describe('AppService', () => {
       await service.handleCron();
       expect(generateSpy).toHaveBeenCalled();
     });
-
-    // it('should not call generateNewSeed if time does not match', async () => {
-    //   const now = new Date();
-    //   const wrongHour = (now.getHours() + 1) % 24;
-
-    //   mockConfigService.get.mockImplementation((key: string, def: number) => {
-    //     if (key === 'SEED_CHANGE_DAY') return now.getDay();
-    //     if (key === 'SEED_CHANGE_HOUR') return wrongHour;
-    //     return def;
-    //   });
-
-    //   const generateSpy = jest
-    //     .spyOn(service, 'generateNewSeed')
-    //     .mockResolvedValue(undefined);
-
-    //   await service.handleCron();
-    //   expect(generateSpy).not.toHaveBeenCalled();
-    // });
   });
 
   describe('onModuleInit', () => {

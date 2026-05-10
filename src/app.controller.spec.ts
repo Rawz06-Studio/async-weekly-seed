@@ -7,6 +7,7 @@ describe('AppController', () => {
 
   const mockAppService = {
     getCurrentSeed: jest.fn(),
+    getNextSeedDate: jest.fn().mockReturnValue(new Date('2026-05-13T18:00:00.000Z')),
     addScore: jest.fn(),
     getArchives: jest.fn(),
     getArchiveById: jest.fn(),

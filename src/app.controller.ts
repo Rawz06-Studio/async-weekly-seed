@@ -18,7 +18,8 @@ export class AppController {
   @Render('index')
   async getHome() {
     const currentSeed = await this.appService.getCurrentSeed();
-    return { seed: currentSeed, formatTime: secondsToTimeString };
+    const nextSeedDate = this.appService.getNextSeedDate();
+    return { seed: currentSeed, nextSeedDate, formatTime: secondsToTimeString };
   }
 
   @Post('score')

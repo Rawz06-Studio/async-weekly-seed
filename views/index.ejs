@@ -86,6 +86,38 @@
                             }) %>
                         </span>
                     </div>
+                    <% if (nextSeedDate) { %>
+                    <div class="text-center">
+                        <span class="block text-xs tracking-widest uppercase mb-1 text-stone-400 dark:text-gray-500">Next Seed</span>
+                        <span class="font-cinzel text-2xl font-semibold text-gray-700 dark:text-gray-200">
+                            <%= new Date(nextSeedDate).toLocaleString('en-GB', {
+                                timeZone: 'Europe/Paris', weekday: 'short', day: 'numeric',
+                                month: 'short', hour: '2-digit', minute: '2-digit'
+                            }) %>
+                        </span>
+                        <span id="countdown" class="block text-xs mt-1 font-mono tracking-wider text-amber-600 dark:text-amber-500"></span>
+                    </div>
+                    <script>
+                        (function () {
+                            const target = new Date('<%= new Date(nextSeedDate).toISOString() %>');
+                            const el = document.getElementById('countdown');
+                            if (!el || isNaN(target.getTime())) return;
+                            function update() {
+                                const diff = target - Date.now();
+                                if (diff <= 0) { el.textContent = 'Refresh for new seed!'; return; }
+                                const d = Math.floor(diff / 86400000);
+                                const h = Math.floor((diff % 86400000) / 3600000);
+                                const m = Math.floor((diff % 3600000) / 60000);
+                                const s = Math.floor((diff % 60000) / 1000);
+                                el.textContent = d > 0
+                                    ? `in ${d}d ${h}h ${String(m).padStart(2,'0')}m`
+                                    : `in ${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
+                                setTimeout(update, 1000);
+                            }
+                            update();
+                        })();
+                    </script>
+                    <% } %>
                     <a href="<%= seed.seedUrl %>" target="_blank"
                         class="font-cinzel uppercase tracking-wider text-sm font-bold bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-gray-900 px-8 py-3 rounded-lg shadow-md shadow-amber-200 dark:shadow-amber-900/40 transition-all duration-200 hover:shadow-lg hover:shadow-amber-200 dark:hover:shadow-amber-900/50 hover:-translate-y-px">
                         Download Seed

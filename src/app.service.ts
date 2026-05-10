@@ -3,7 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WeeklySeed } from './entities/weekly-seed.entity';
 import { Score } from './entities/score.entity';
-import { Cron } from '@nestjs/schedule';
+import { SchedulerRegistry } from '@nestjs/schedule';
+import { CronJob } from 'cron';
 import { ConfigService } from '@nestjs/config';
 import { timeStringToSeconds } from './utils/time';
 
@@ -23,6 +24,7 @@ export class AppService implements OnModuleInit {
     @InjectRepository(Score)
     private scoreRepository: Repository<Score>,
     private configService: ConfigService,
+    private schedulerRegistry: SchedulerRegistry,
   ) {}
 
   async onModuleInit() {
@@ -31,6 +33,24 @@ export class AppService implements OnModuleInit {
       this.logger.log('No seed found, generating initial seed...');
       await this.generateNewSeed();
     }
+
+    const day = this.configService.get<number>('SEED_CHANGE_DAY', 3);
+    const hour = this.configService.get<number>('SEED_CHANGE_HOUR', 20);
+    const cronExpression = `0 ${hour} * * ${day}`;
+
+    this.logger.log(
+      `Registering weekly cron: "${cronExpression}" (Europe/Paris)`,
+    );
+
+    const job = new CronJob(
+      cronExpression,
+      () => void this.handleCron(),
+      null,
+      true,
+      'Europe/Paris',
+    );
+
+    this.schedulerRegistry.addCronJob('weekly-seed', job);
   }
 
   async getCurrentSeed() {
@@ -60,11 +80,17 @@ export class AppService implements OnModuleInit {
       .getOne();
   }
 
-  @Cron('0 20 * * 3', {
-    timeZone: 'Europe/Paris',
-  })
   async handleCron() {
     await this.generateNewSeed();
+  }
+
+  getNextSeedDate(): Date | null {
+    try {
+      const job = this.schedulerRegistry.getCronJob('weekly-seed');
+      return job.nextDate().toJSDate();
+    } catch {
+      return null;
+    }
   }
 
   async generateNewSeed() {
