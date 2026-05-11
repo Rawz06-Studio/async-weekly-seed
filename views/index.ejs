@@ -192,6 +192,11 @@
                                    text-amber-700 dark:text-amber-300 group-hover:text-amber-600 dark:group-hover:text-amber-400
                                    transition-colors duration-200">
                             Weekly Standings
+                            <% if (seed.scores && seed.scores.length > 0) { %>
+                            <span class="font-sans font-normal normal-case tracking-normal text-xs ml-2 text-stone-400 dark:text-gray-600">
+                                (<%= seed.scores.length %> participant<%= seed.scores.length !== 1 ? 's' : '' %>)
+                            </span>
+                            <% } %>
                         </h2>
                         <span class="text-amber-500 dark:text-amber-600 transition-transform duration-300 group-open:rotate-180">
                             <svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="18">
@@ -200,8 +205,36 @@
                         </span>
                     </summary>
 
-                    <div class="mt-5 overflow-x-auto">
-                        <% if (seed.scores && seed.scores.length > 0) { %>
+                    <% if (seed.scores && seed.scores.length > 0) { %>
+
+                    <%/* ── Mode toggle ────────────────────────────────── */%>
+                    <div class="mt-5 mb-4 flex gap-2">
+                        <button id="btn-masked" onclick="standingsMode('masked')"
+                            class="font-cinzel text-xs uppercase tracking-widest px-4 py-2 rounded-lg border transition-all duration-200
+                                   bg-amber-500 text-gray-900 border-amber-500">
+                            Players only
+                        </button>
+                        <button id="btn-full" onclick="standingsMode('full')"
+                            class="font-cinzel text-xs uppercase tracking-widest px-4 py-2 rounded-lg border transition-all duration-200
+                                   border-amber-300 dark:border-amber-800/40 text-amber-600 dark:text-amber-700
+                                   hover:border-amber-400 dark:hover:border-amber-700/60">
+                            Full standings
+                        </button>
+                    </div>
+
+                    <%/* ── Masked view: names only, alphabetical ──────── */%>
+                    <div id="standings-masked" class="overflow-x-auto">
+                        <ul class="divide-y divide-stone-100 dark:divide-gray-800/60">
+                            <% [...seed.scores].sort((a, b) => a.playerName.localeCompare(b.playerName)).forEach(score => { %>
+                            <li class="py-3 px-3 font-semibold text-gray-800 dark:text-gray-100">
+                                <%= score.playerName %>
+                            </li>
+                            <% }) %>
+                        </ul>
+                    </div>
+
+                    <%/* ── Full standings table ───────────────────────── */%>
+                    <div id="standings-full" class="hidden overflow-x-auto">
                         <table class="w-full text-left">
                             <thead>
                                 <tr class="font-cinzel text-xs tracking-widest uppercase border-b border-amber-200 dark:border-amber-800/40
@@ -254,12 +287,35 @@
                                 <% }) %>
                             </tbody>
                         </table>
-                        <% } else { %>
+                    </div>
+
+                    <script>
+                        function standingsMode(mode) {
+                            const isFull = mode === 'full';
+                            document.getElementById('standings-masked').classList.toggle('hidden', isFull);
+                            document.getElementById('standings-full').classList.toggle('hidden', !isFull);
+                            const activeClass = ['bg-amber-500', 'text-gray-900', 'border-amber-500'];
+                            const inactiveClass = ['border-amber-300', 'dark:border-amber-800/40', 'text-amber-600', 'dark:text-amber-700'];
+                            const btnMasked = document.getElementById('btn-masked');
+                            const btnFull = document.getElementById('btn-full');
+                            activeClass.forEach(c => {
+                                btnMasked.classList.toggle(c, !isFull);
+                                btnFull.classList.toggle(c, isFull);
+                            });
+                            inactiveClass.forEach(c => {
+                                btnMasked.classList.toggle(c, isFull);
+                                btnFull.classList.toggle(c, !isFull);
+                            });
+                        }
+                    </script>
+
+                    <% } else { %>
+                    <div class="mt-5">
                         <p class="text-center py-10 font-cinzel tracking-wide italic text-stone-400 dark:text-gray-600">
                             No times recorded yet — be the first hero!
                         </p>
-                        <% } %>
                     </div>
+                    <% } %>
                 </details>
             </div>
 
