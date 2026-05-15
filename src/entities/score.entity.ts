@@ -10,23 +10,23 @@ import { WeeklySeed } from './weekly-seed.entity';
 @Entity()
 export class Score {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  playerName: string;
+  playerName!: string;
 
   @Column({ type: 'int', nullable: true })
-  time: number | null; // seconds since start, null = forfeit
+  time!: number | null; // seconds since start, null = forfeit
 
   @Column({ nullable: true })
-  comment: string;
+  comment!: string;
 
   @Column({ nullable: true })
-  vodUrl: string;
+  vodUrl!: string;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @ManyToOne(() => WeeklySeed, (seed) => seed.scores)
-  seed: WeeklySeed;
+  seed!: WeeklySeed;
 }
