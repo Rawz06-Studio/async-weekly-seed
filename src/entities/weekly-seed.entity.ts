@@ -10,26 +10,26 @@ import { Score } from './score.entity';
 @Entity()
 export class WeeklySeed {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column()
-  seedUrl: string;
+  seedUrl!: string;
 
   @Column()
-  preset: string;
+  preset!: string;
 
   @Column()
-  version: string;
+  version!: string;
 
   @Column({ type: 'text', nullable: true })
-  settings: string;
+  settings!: string;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @Column({ default: true })
-  isActive: boolean;
+  isActive!: boolean;
 
   @OneToMany(() => Score, (score) => score.seed)
-  scores: Score[];
+  scores!: Score[];
 }
