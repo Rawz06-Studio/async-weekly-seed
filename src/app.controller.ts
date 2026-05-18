@@ -65,6 +65,12 @@ export class AppController {
     return { rulesets: this.appService.getRulesets() };
   }
 
+  @Get('upcoming')
+  @Render('upcoming')
+  async getUpcoming() {
+    return { upcoming: await this.appService.getUpcomingPresets() };
+  }
+
   @Post('admin/generate-seed')
   @Redirect('/')
   async forceGenerateSeed() {

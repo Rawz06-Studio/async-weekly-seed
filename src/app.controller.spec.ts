@@ -44,20 +44,32 @@ describe('AppController', () => {
   });
 
   describe('postScore', () => {
+    const mockRes = { redirect: jest.fn() };
+
+    beforeEach(() => mockRes.redirect.mockClear());
+
     it('should call addScore if playerName is provided', async () => {
-      await controller.postScore('Player', '1:23', 'Comment', 'http://vod');
+      await controller.postScore('Player', '1:23', 'Comment', 'http://vod', mockRes as any);
       expect(mockAppService.addScore).toHaveBeenCalledWith(
         'Player',
         '1:23',
         'Comment',
         'http://vod',
       );
+      expect(mockRes.redirect).toHaveBeenCalledWith('/');
     });
 
-    it('should not call addScore if playerName is missing', async () => {
+    it('should redirect with error if playerName is missing', async () => {
       mockAppService.addScore.mockClear();
-      await controller.postScore('', '1:23', 'Comment', '');
+      await controller.postScore('', '1:23', 'Comment', '', mockRes as any);
       expect(mockAppService.addScore).not.toHaveBeenCalled();
+      expect(mockRes.redirect).toHaveBeenCalledWith(expect.stringContaining('/?error='));
+    });
+
+    it('should redirect with error if addScore throws', async () => {
+      mockAppService.addScore.mockRejectedValueOnce(new Error('Invalid time format'));
+      await controller.postScore('Player', 'bad', '', '', mockRes as any);
+      expect(mockRes.redirect).toHaveBeenCalledWith(expect.stringContaining('Invalid%20time%20format'));
     });
   });
 
