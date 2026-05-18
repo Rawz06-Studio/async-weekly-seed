@@ -6,7 +6,10 @@ import {
   Render,
   Redirect,
   Param,
+  Query,
+  Res,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { AppService } from './app.service';
 import { secondsToTimeString } from './utils/time';
 
@@ -16,22 +19,30 @@ export class AppController {
 
   @Get()
   @Render('index')
-  async getHome() {
+  async getHome(@Query('error') error?: string) {
     const currentSeed = await this.appService.getCurrentSeed();
     const nextSeedDate = this.appService.getNextSeedDate();
-    return { seed: currentSeed, nextSeedDate, formatTime: secondsToTimeString };
+    return { seed: currentSeed, nextSeedDate, formatTime: secondsToTimeString, error };
   }
 
   @Post('score')
-  @Redirect('/')
   async postScore(
     @Body('playerName') playerName: string,
     @Body('time') time: string,
     @Body('comment') comment: string,
     @Body('vodUrl') vodUrl: string,
+    @Res() res: Response,
   ) {
-    if (!playerName) return;
-    await this.appService.addScore(playerName, time, comment, vodUrl);
+    if (!playerName) {
+      return res.redirect('/?error=' + encodeURIComponent('Player name is required'));
+    }
+    try {
+      await this.appService.addScore(playerName, time, comment, vodUrl);
+      return res.redirect('/');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'An error occurred';
+      return res.redirect('/?error=' + encodeURIComponent(message));
+    }
   }
 
   @Get('archives')
@@ -46,6 +57,12 @@ export class AppController {
   async getArchive(@Param('id') id: number) {
     const seed = await this.appService.getArchiveById(id);
     return { seed, formatTime: secondsToTimeString };
+  }
+
+  @Get('rulesets')
+  @Render('rulesets')
+  getRulesets() {
+    return { rulesets: this.appService.getRulesets() };
   }
 
   @Post('admin/generate-seed')

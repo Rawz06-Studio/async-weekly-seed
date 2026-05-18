@@ -136,6 +136,36 @@ export class AppService implements OnModuleInit {
     }
   }
 
+  getRulesets() {
+    const presetWeights = JSON.parse(
+      this.configService.get<string>(
+        'PRESET_WEIGHTS',
+        '{"seed_s9": 40, "seed_tot": 20, "seed_mixed": 20, "seed_rsl": 20}',
+      ),
+    ) as Record<string, number>;
+
+    const descriptions: Record<string, string> = {
+      seed_s9:
+        'Standard Season 9 — the main competitive tournament ruleset. Fixed, well-balanced settings used as the reference format for the weekly async.',
+      seed_tot:
+        'Tournament of Truth — the flagship tournament of the French-speaking OoTR community, with its own curated ruleset and competitive spirit.',
+      seed_mixed:
+        'Mixed Pools — all entrances are randomised across the board, turning every seed into an unpredictable adventure where nothing is where you expect it.',
+      seed_rsl:
+        'Random Settings League — each seed rolls a random combination of settings, keeping every run fresh. Currently running Season 7; presets will be updated as soon as Season 8 is announced.',
+    };
+
+    const totalWeight = Object.values(presetWeights).reduce((a, b) => a + b, 0);
+
+    return Object.entries(presetWeights).map(([key, weight]) => ({
+      key,
+      name: key.replace('seed_', '').toUpperCase(),
+      weight,
+      probability: Math.round((weight / totalWeight) * 100),
+      description: descriptions[key] ?? 'No description available.',
+    }));
+  }
+
   private weightedRandom(weights: Record<string, number>): string {
     const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
     let random = Math.random() * totalWeight;
