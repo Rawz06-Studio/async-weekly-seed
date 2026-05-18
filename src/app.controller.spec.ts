@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import type { Response } from 'express';
 
 describe('AppController', () => {
   let controller: AppController;
@@ -45,11 +46,18 @@ describe('AppController', () => {
 
   describe('postScore', () => {
     const mockRes = { redirect: jest.fn() };
+    const res = mockRes as unknown as Response;
 
     beforeEach(() => mockRes.redirect.mockClear());
 
     it('should call addScore if playerName is provided', async () => {
-      await controller.postScore('Player', '1:23', 'Comment', 'http://vod', mockRes as any);
+      await controller.postScore(
+        'Player',
+        '1:23',
+        'Comment',
+        'http://vod',
+        res,
+      );
       expect(mockAppService.addScore).toHaveBeenCalledWith(
         'Player',
         '1:23',
@@ -61,15 +69,21 @@ describe('AppController', () => {
 
     it('should redirect with error if playerName is missing', async () => {
       mockAppService.addScore.mockClear();
-      await controller.postScore('', '1:23', 'Comment', '', mockRes as any);
+      await controller.postScore('', '1:23', 'Comment', '', res);
       expect(mockAppService.addScore).not.toHaveBeenCalled();
-      expect(mockRes.redirect).toHaveBeenCalledWith(expect.stringContaining('/?error='));
+      expect(mockRes.redirect).toHaveBeenCalledWith(
+        expect.stringContaining('/?error='),
+      );
     });
 
     it('should redirect with error if addScore throws', async () => {
-      mockAppService.addScore.mockRejectedValueOnce(new Error('Invalid time format'));
-      await controller.postScore('Player', 'bad', '', '', mockRes as any);
-      expect(mockRes.redirect).toHaveBeenCalledWith(expect.stringContaining('Invalid%20time%20format'));
+      mockAppService.addScore.mockRejectedValueOnce(
+        new Error('Invalid time format'),
+      );
+      await controller.postScore('Player', 'bad', '', '', res);
+      expect(mockRes.redirect).toHaveBeenCalledWith(
+        expect.stringContaining('Invalid%20time%20format'),
+      );
     });
   });
 

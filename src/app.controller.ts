@@ -22,7 +22,12 @@ export class AppController {
   async getHome(@Query('error') error?: string) {
     const currentSeed = await this.appService.getCurrentSeed();
     const nextSeedDate = this.appService.getNextSeedDate();
-    return { seed: currentSeed, nextSeedDate, formatTime: secondsToTimeString, error };
+    return {
+      seed: currentSeed,
+      nextSeedDate,
+      formatTime: secondsToTimeString,
+      error,
+    };
   }
 
   @Post('score')
@@ -34,7 +39,9 @@ export class AppController {
     @Res() res: Response,
   ) {
     if (!playerName) {
-      return res.redirect('/?error=' + encodeURIComponent('Player name is required'));
+      return res.redirect(
+        '/?error=' + encodeURIComponent('Player name is required'),
+      );
     }
     try {
       await this.appService.addScore(playerName, time, comment, vodUrl);

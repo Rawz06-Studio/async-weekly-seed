@@ -113,7 +113,9 @@ export class AppService implements OnModuleInit {
       preset = nextItem.preset;
       await this.presetQueueRepository.delete(nextItem.id);
     } else {
-      this.logger.warn('Preset queue was empty, falling back to weighted random');
+      this.logger.warn(
+        'Preset queue was empty, falling back to weighted random',
+      );
       preset = this.weightedRandom(this.getPresetWeights());
     }
 
@@ -181,7 +183,9 @@ export class AppService implements OnModuleInit {
     const currentCount = await this.presetQueueRepository.count();
     const toAdd = targetSize - currentCount;
     if (toAdd > 0) {
-      this.logger.log(`Filling preset queue: adding ${toAdd} item(s) (target: ${targetSize})`);
+      this.logger.log(
+        `Filling preset queue: adding ${toAdd} item(s) (target: ${targetSize})`,
+      );
       await this.pushToQueue(toAdd);
     }
   }
@@ -190,7 +194,9 @@ export class AppService implements OnModuleInit {
     const weights = this.getPresetWeights();
     for (let i = 0; i < count; i++) {
       await this.presetQueueRepository.save(
-        this.presetQueueRepository.create({ preset: this.weightedRandom(weights) }),
+        this.presetQueueRepository.create({
+          preset: this.weightedRandom(weights),
+        }),
       );
     }
   }

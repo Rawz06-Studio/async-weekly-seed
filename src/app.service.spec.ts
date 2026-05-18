@@ -7,6 +7,14 @@ import { PresetQueueItem } from './entities/preset-queue-item.entity';
 import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
 
+jest.mock('cron', () => ({
+  CronJob: jest.fn().mockImplementation(() => ({
+    start: jest.fn(),
+    stop: jest.fn(),
+    nextDate: jest.fn(),
+  })),
+}));
+
 describe('AppService', () => {
   let service: AppService;
 
