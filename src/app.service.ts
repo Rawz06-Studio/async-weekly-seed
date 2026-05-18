@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { WeeklySeed } from './entities/weekly-seed.entity';
 import { Score } from './entities/score.entity';
 import { PresetQueueItem } from './entities/preset-queue-item.entity';
+import { Leaderboard } from './entities/leaderboard.entity';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { ConfigService } from '@nestjs/config';
@@ -14,6 +15,20 @@ interface SeedApiResponse {
   version: string;
   usedSettings: any;
 }
+
+const DEFAULT_PRESET_WEIGHTS =
+  '{"seed_s9": 40, "seed_tot": 20, "seed_mixed": 20, "seed_rsl": 20}';
+
+const PRESET_DESCRIPTIONS: Record<string, string> = {
+  seed_s9:
+    'Standard Season 9 — the main competitive tournament ruleset. Fixed, well-balanced settings used as the reference format for the weekly async.',
+  seed_tot:
+    'Tournament of Truth — the flagship tournament of the French-speaking OoTR community, with its own curated ruleset and competitive spirit.',
+  seed_mixed:
+    'Mixed Pools — all entrances are randomised across the board, turning every seed into an unpredictable adventure where nothing is where you expect it.',
+  seed_rsl:
+    'Random Settings League — each seed rolls a random combination of settings, keeping every run fresh. Currently running Season 7; presets will be updated as soon as Season 8 is announced.',
+};
 
 @Injectable()
 export class AppService implements OnModuleInit {
@@ -26,23 +41,28 @@ export class AppService implements OnModuleInit {
     private scoreRepository: Repository<Score>,
     @InjectRepository(PresetQueueItem)
     private presetQueueRepository: Repository<PresetQueueItem>,
+    @InjectRepository(Leaderboard)
+    private leaderboardRepository: Repository<Leaderboard>,
     private configService: ConfigService,
     private schedulerRegistry: SchedulerRegistry,
   ) {}
 
   async onModuleInit() {
-    await this.fillQueue();
+    await this.ensureDefaultLeaderboard();
+    await this.fillAllQueues();
 
-    const currentSeed = await this.getCurrentSeed();
-    if (!currentSeed) {
-      this.logger.log('No seed found, generating initial seed...');
-      await this.generateNewSeed();
+    const leaderboards = await this.leaderboardRepository.find();
+    for (const lb of leaderboards) {
+      const current = await this.getCurrentSeedForLeaderboard(lb.id);
+      if (!current) {
+        this.logger.log(`No active seed for "${lb.name}", generating...`);
+        await this.generateNewSeed(lb);
+      }
     }
 
     const day = this.configService.get<number>('SEED_CHANGE_DAY', 3);
     const hour = this.configService.get<number>('SEED_CHANGE_HOUR', 20);
     const cronExpression = `0 ${hour} * * ${day}`;
-
     this.logger.log(
       `Registering weekly cron: "${cronExpression}" (Europe/Paris)`,
     );
@@ -54,22 +74,72 @@ export class AppService implements OnModuleInit {
       true,
       'Europe/Paris',
     );
-
     this.schedulerRegistry.addCronJob('weekly-seed', job);
   }
 
-  async getCurrentSeed() {
-    return await this.seedRepository
+  private async ensureDefaultLeaderboard() {
+    const count = await this.leaderboardRepository.count();
+    if (count > 0) return;
+
+    const lb = await this.leaderboardRepository.save(
+      this.leaderboardRepository.create({
+        name: 'Weekly',
+        presetWeights: DEFAULT_PRESET_WEIGHTS,
+      }),
+    );
+    this.logger.log('Created default leaderboard with default preset weights');
+
+    // Migrate existing seeds and queue items that have no leaderboard yet
+    const orphanSeeds = await this.seedRepository
+      .createQueryBuilder('seed')
+      .where('seed.leaderboardId IS NULL')
+      .getMany();
+    for (const seed of orphanSeeds) {
+      await this.seedRepository.save({ ...seed, leaderboard: lb });
+    }
+
+    const orphanQueue = await this.presetQueueRepository
+      .createQueryBuilder('item')
+      .where('item.leaderboardId IS NULL')
+      .getMany();
+    for (const item of orphanQueue) {
+      await this.presetQueueRepository.save({ ...item, leaderboard: lb });
+    }
+
+    if (orphanSeeds.length + orphanQueue.length > 0) {
+      this.logger.log(
+        `Migrated ${orphanSeeds.length} seed(s) and ${orphanQueue.length} queue item(s) to default leaderboard`,
+      );
+    }
+  }
+
+  async getCurrentSeedForLeaderboard(leaderboardId: number) {
+    return this.seedRepository
       .createQueryBuilder('seed')
       .leftJoinAndSelect('seed.scores', 'score')
-      .where('seed.isActive = :isActive', { isActive: true })
+      .where('seed.isActive = :isActive AND seed.leaderboardId = :lbId', {
+        isActive: true,
+        lbId: leaderboardId,
+      })
       .orderBy('seed.createdAt', 'DESC')
       .addOrderBy('score.time', 'ASC', 'NULLS LAST')
       .getOne();
   }
 
+  async getLeaderboardsWithActiveSeeds() {
+    const leaderboards = await this.leaderboardRepository.find({
+      order: { id: 'ASC' },
+    });
+    return Promise.all(
+      leaderboards.map(async (lb) => ({
+        ...lb,
+        seed: await this.getCurrentSeedForLeaderboard(lb.id),
+      })),
+    );
+  }
+
   async getArchives() {
-    return await this.seedRepository.find({
+    return this.seedRepository.find({
       where: { isActive: false },
       order: { createdAt: 'DESC' },
       relations: ['scores'],
@@ -77,7 +147,7 @@ export class AppService implements OnModuleInit {
   }
 
   async getArchiveById(id: number) {
-    return await this.seedRepository
+    return this.seedRepository
       .createQueryBuilder('seed')
       .leftJoinAndSelect('seed.scores', 'score')
       .where('seed.id = :id', { id })
@@ -86,7 +156,10 @@ export class AppService implements OnModuleInit {
   }
 
   async handleCron() {
-    await this.generateNewSeed();
+    const leaderboards = await this.leaderboardRepository.find();
+    for (const lb of leaderboards) {
+      await this.generateNewSeed(lb);
+    }
   }
 
   getNextSeedDate(): Date | null {
@@ -98,13 +171,21 @@ export class AppService implements OnModuleInit {
     }
   }
 
-  async generateNewSeed() {
-    // 1. Disable current seed
-    await this.seedRepository.update({ isActive: true }, { isActive: false });
+  async generateNewSeed(leaderboard: Leaderboard) {
+    // 1. Deactivate current seed for this leaderboard only
+    await this.seedRepository
+      .createQueryBuilder()
+      .update(WeeklySeed)
+      .set({ isActive: false })
+      .where('leaderboardId = :lbId AND isActive = :active', {
+        lbId: leaderboard.id,
+        active: true,
+      })
+      .execute();
 
-    // 2. Pop next preset from queue
+    // 2. Pop next preset from this leaderboard's queue
     const nextItem = await this.presetQueueRepository.findOne({
-      where: {},
+      where: { leaderboard: { id: leaderboard.id } },
       order: { createdAt: 'ASC' },
     });
 
@@ -114,116 +195,135 @@ export class AppService implements OnModuleInit {
       await this.presetQueueRepository.delete(nextItem.id);
     } else {
       this.logger.warn(
-        'Preset queue was empty, falling back to weighted random',
+        `Queue empty for "${leaderboard.name}", falling back to weighted random`,
       );
-      preset = this.weightedRandom(this.getPresetWeights());
+      preset = this.weightedRandom(
+        JSON.parse(leaderboard.presetWeights) as Record<string, number>,
+      );
     }
 
     // 3. Replenish queue by one to maintain target size
-    await this.pushToQueue(1);
+    await this.pushToQueue(leaderboard, 1);
 
-    // 4. Call API to generate seed
+    // 4. Call API and save
     const apiUrl = this.configService.get<string>('SEED_API_URL');
     try {
-      this.logger.log(`Generating seed for preset: ${preset}`);
+      this.logger.log(
+        `Generating seed for "${leaderboard.name}" — preset: ${preset}`,
+      );
       const response = await fetch(`${apiUrl}/${preset}`);
-
       if (!response.ok) {
         throw new Error(`API responded with status: ${response.status}`);
       }
-
       const data = (await response.json()) as SeedApiResponse;
-
-      // 5. Save new seed
       const newSeed = this.seedRepository.create({
         seedUrl: data.seedUrl,
-        preset: preset,
+        preset,
         version: data.version,
         settings: JSON.stringify(data.usedSettings),
         isActive: true,
+        leaderboard,
       });
-
       await this.seedRepository.save(newSeed);
-      this.logger.log(`New seed generated: ${data.seedUrl}`);
+      this.logger.log(
+        `New seed generated for "${leaderboard.name}": ${data.seedUrl}`,
+      );
     } catch (error) {
       this.logger.error(
-        `Failed to generate seed: ${error instanceof Error ? error.message : String(error)}`,
+        `Failed to generate seed for "${leaderboard.name}": ${error instanceof Error ? error.message : String(error)}`,
       );
     }
   }
 
   async getUpcomingPresets() {
-    const items = await this.presetQueueRepository.find({
-      order: { createdAt: 'ASC' },
+    const leaderboards = await this.leaderboardRepository.find({
+      order: { id: 'ASC' },
     });
-
     const nextDate = this.getNextSeedDate();
-    if (!nextDate) return [];
+    if (!nextDate || leaderboards.length === 0)
+      return { leaderboards: [], rows: [] };
 
     const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 
-    return items.map((item, index) => ({
-      preset: item.preset,
-      name: item.preset.replace('seed_', '').toUpperCase(),
-      date: new Date(nextDate.getTime() + index * WEEK_MS),
+    const lbsWithItems = await Promise.all(
+      leaderboards.map(async (lb) => {
+        const items = await this.presetQueueRepository.find({
+          where: { leaderboard: { id: lb.id } },
+          order: { createdAt: 'ASC' },
+        });
+        return {
+          id: lb.id,
+          name: lb.name,
+          items: items.map((item, i) => ({
+            preset: item.preset,
+            name: item.preset.replace('seed_', '').toUpperCase(),
+            date: new Date(nextDate.getTime() + i * WEEK_MS),
+          })),
+        };
+      }),
+    );
+
+    const maxLen = Math.max(...lbsWithItems.map((lb) => lb.items.length), 0);
+    const rows = Array.from({ length: maxLen }, (_, i) => ({
+      date: new Date(nextDate.getTime() + i * WEEK_MS),
+      presets: lbsWithItems.map((lb) => lb.items[i] ?? null),
     }));
+
+    return { leaderboards: lbsWithItems, rows };
   }
 
-  private getPresetWeights(): Record<string, number> {
-    return JSON.parse(
-      this.configService.get<string>(
-        'PRESET_WEIGHTS',
-        '{"seed_s9": 40, "seed_tot": 20, "seed_mixed": 20, "seed_rsl": 20}',
-      ),
-    ) as Record<string, number>;
-  }
-
-  private async fillQueue() {
-    const targetSize = this.configService.get<number>('PRESET_QUEUE_SIZE', 5);
-    const currentCount = await this.presetQueueRepository.count();
-    const toAdd = targetSize - currentCount;
-    if (toAdd > 0) {
-      this.logger.log(
-        `Filling preset queue: adding ${toAdd} item(s) (target: ${targetSize})`,
-      );
-      await this.pushToQueue(toAdd);
+  private async fillAllQueues() {
+    const leaderboards = await this.leaderboardRepository.find();
+    for (const lb of leaderboards) {
+      await this.fillQueue(lb);
     }
   }
 
-  private async pushToQueue(count: number) {
-    const weights = this.getPresetWeights();
+  private async fillQueue(leaderboard: Leaderboard) {
+    const targetSize = this.configService.get<number>('PRESET_QUEUE_SIZE', 5);
+    const currentCount = await this.presetQueueRepository.count({
+      where: { leaderboard: { id: leaderboard.id } },
+    });
+    const toAdd = targetSize - currentCount;
+    if (toAdd > 0) {
+      this.logger.log(
+        `Filling queue for "${leaderboard.name}": adding ${toAdd} item(s) (target: ${targetSize})`,
+      );
+      await this.pushToQueue(leaderboard, toAdd);
+    }
+  }
+
+  private async pushToQueue(leaderboard: Leaderboard, count: number) {
+    const weights = JSON.parse(leaderboard.presetWeights) as Record<
+      string,
+      number
+    >;
     for (let i = 0; i < count; i++) {
       await this.presetQueueRepository.save(
         this.presetQueueRepository.create({
           preset: this.weightedRandom(weights),
+          leaderboard,
         }),
       );
     }
   }
 
-  getRulesets() {
-    const presetWeights = this.getPresetWeights();
-
-    const descriptions: Record<string, string> = {
-      seed_s9:
-        'Standard Season 9 — the main competitive tournament ruleset. Fixed, well-balanced settings used as the reference format for the weekly async.',
-      seed_tot:
-        'Tournament of Truth — the flagship tournament of the French-speaking OoTR community, with its own curated ruleset and competitive spirit.',
-      seed_mixed:
-        'Mixed Pools — all entrances are randomised across the board, turning every seed into an unpredictable adventure where nothing is where you expect it.',
-      seed_rsl:
-        'Random Settings League — each seed rolls a random combination of settings, keeping every run fresh. Currently running Season 7; presets will be updated as soon as Season 8 is announced.',
-    };
-
-    const totalWeight = Object.values(presetWeights).reduce((a, b) => a + b, 0);
-
-    return Object.entries(presetWeights).map(([key, weight]) => ({
-      key,
-      name: key.replace('seed_', '').toUpperCase(),
-      weight,
-      probability: Math.round((weight / totalWeight) * 100),
-      description: descriptions[key] ?? 'No description available.',
-    }));
+  async getLeaderboardsWithRulesets() {
+    const leaderboards = await this.leaderboardRepository.find({
+      order: { id: 'ASC' },
+    });
+    return leaderboards.map((lb) => {
+      const weights = JSON.parse(lb.presetWeights) as Record<string, number>;
+      const totalWeight = Object.values(weights).reduce((a, b) => a + b, 0);
+      const rulesets = Object.entries(weights).map(([key, weight]) => ({
+        key,
+        name: key.replace('seed_', '').toUpperCase(),
+        weight,
+        probability: Math.round((weight / totalWeight) * 100),
+        description: PRESET_DESCRIPTIONS[key] ?? 'No description available.',
+      }));
+      return { id: lb.id, name: lb.name, rulesets };
+    });
   }
 
   private weightedRandom(weights: Record<string, number>): string {
@@ -241,8 +341,12 @@ export class AppService implements OnModuleInit {
     time: string,
     comment: string,
     vodUrl?: string,
+    leaderboardId?: number,
   ) {
-    const currentSeed = await this.getCurrentSeed();
+    const currentSeed = leaderboardId
+      ? await this.getCurrentSeedForLeaderboard(leaderboardId)
+      : null;
+
     if (!currentSeed) throw new Error('No active seed found');
 
     const normalizedTime = time.trim().toLowerCase();
@@ -272,6 +376,6 @@ export class AppService implements OnModuleInit {
       seed: currentSeed,
     } as Partial<Score>);
 
-    return await this.scoreRepository.save(newScore);
+    return this.scoreRepository.save(newScore);
   }
 }

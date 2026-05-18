@@ -19,14 +19,15 @@ export class AppController {
 
   @Get()
   @Render('index')
-  async getHome(@Query('error') error?: string) {
-    const currentSeed = await this.appService.getCurrentSeed();
+  async getHome(@Query('error') error?: string, @Query('lbId') lbId?: string) {
+    const leaderboards = await this.appService.getLeaderboardsWithActiveSeeds();
     const nextSeedDate = this.appService.getNextSeedDate();
     return {
-      seed: currentSeed,
+      leaderboards,
       nextSeedDate,
       formatTime: secondsToTimeString,
       error,
+      activeLbId: lbId ? parseInt(lbId, 10) : null,
     };
   }
 
@@ -36,19 +37,23 @@ export class AppController {
     @Body('time') time: string,
     @Body('comment') comment: string,
     @Body('vodUrl') vodUrl: string,
+    @Body('leaderboardId') leaderboardId: string,
     @Res() res: Response,
   ) {
+    const lbId = parseInt(leaderboardId, 10);
     if (!playerName) {
       return res.redirect(
-        '/?error=' + encodeURIComponent('Player name is required'),
+        `/?error=${encodeURIComponent('Player name is required')}&lbId=${lbId}`,
       );
     }
     try {
-      await this.appService.addScore(playerName, time, comment, vodUrl);
-      return res.redirect('/');
+      await this.appService.addScore(playerName, time, comment, vodUrl, lbId);
+      return res.redirect(`/?lbId=${lbId}`);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'An error occurred';
-      return res.redirect('/?error=' + encodeURIComponent(message));
+      return res.redirect(
+        `/?error=${encodeURIComponent(message)}&lbId=${lbId}`,
+      );
     }
   }
 
@@ -68,19 +73,21 @@ export class AppController {
 
   @Get('rulesets')
   @Render('rulesets')
-  getRulesets() {
-    return { rulesets: this.appService.getRulesets() };
+  async getRulesets() {
+    return {
+      leaderboards: await this.appService.getLeaderboardsWithRulesets(),
+    };
   }
 
   @Get('upcoming')
   @Render('upcoming')
   async getUpcoming() {
-    return { upcoming: await this.appService.getUpcomingPresets() };
+    return await this.appService.getUpcomingPresets();
   }
 
   @Post('admin/generate-seed')
   @Redirect('/')
   async forceGenerateSeed() {
-    await this.appService.generateNewSeed();
+    await this.appService.handleCron();
   }
 }

@@ -3,7 +3,9 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  ManyToOne,
 } from 'typeorm';
+import { Leaderboard } from './leaderboard.entity';
 
 @Entity()
 export class PresetQueueItem {
@@ -15,4 +17,7 @@ export class PresetQueueItem {
 
   @CreateDateColumn()
   createdAt!: Date;
+
+  @ManyToOne(() => Leaderboard, (lb) => lb.queue, { nullable: true })
+  leaderboard!: Leaderboard | null;
 }

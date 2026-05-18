@@ -14,7 +14,6 @@
         }
     </script>
     <style>
-        /* ── Themed background & decorations ─────────────────────── */
         :root {
             --body-bg: #faf7f0;
             --body-glow: radial-gradient(ellipse 80% 40% at 50% -5%, #fef3c7 0%, transparent 70%);
@@ -62,6 +61,7 @@
         </div>
     </nav>
 
+    <%/* ── Error banner ───────────────────────────────────────────── */%>
     <% if (error) { %>
     <div class="container mx-auto px-4 pt-4">
         <div id="submit-error" class="flex items-start gap-3 rounded-lg border border-red-300 dark:border-red-800/50 bg-red-50 dark:bg-red-950/30 px-5 py-4 text-sm text-red-700 dark:text-red-300">
@@ -75,271 +75,260 @@
     <% } %>
 
     <main class="container mx-auto mt-10 px-4 pb-16">
-        <% if (seed) { %>
 
-        <div class="bg-white/80 dark:bg-gray-900/70 border border-amber-200 dark:border-amber-800/30 rounded-xl shadow-xl shadow-amber-100/50 dark:shadow-black/50 overflow-hidden transition-colors duration-300">
+        <% if (leaderboards && leaderboards.length > 0) { %>
 
-            <%/* ── Seed info ──────────────────────────────────────── */%>
-            <div class="px-8 pt-10 pb-8">
-                <h1 class="font-cinzel text-4xl font-bold text-center tracking-wider mb-8 text-amber-700 dark:text-amber-400">
-                    Weekly Seed
-                </h1>
-                <div class="flex flex-wrap justify-center items-center gap-10">
-                    <div class="text-center">
-                        <span class="block text-xs tracking-widest uppercase mb-1 text-stone-400 dark:text-gray-500">Preset</span>
-                        <span class="font-cinzel text-2xl font-semibold text-amber-600 dark:text-amber-300">
-                            <%= seed.preset.replace('seed_', '').toUpperCase() %>
-                        </span>
-                    </div>
-                    <div class="text-center">
-                        <span class="block text-xs tracking-widest uppercase mb-1 text-stone-400 dark:text-gray-500">Version</span>
-                        <span class="font-cinzel text-2xl font-semibold text-gray-700 dark:text-gray-200">
-                            <%= seed.version %>
-                        </span>
-                    </div>
-                    <div class="text-center">
-                        <span class="block text-xs tracking-widest uppercase mb-1 text-stone-400 dark:text-gray-500">Generated</span>
-                        <span class="font-cinzel text-2xl font-semibold text-gray-700 dark:text-gray-200">
-                            <%= new Date(seed.createdAt).toLocaleString('en-GB', {
-                                timeZone: 'Europe/Paris', day: 'numeric', month: 'short',
-                                year: 'numeric', hour: '2-digit', minute: '2-digit'
-                            }) %>
-                        </span>
-                    </div>
-                    <% if (nextSeedDate) { %>
-                    <div class="text-center">
-                        <span class="block text-xs tracking-widest uppercase mb-1 text-stone-400 dark:text-gray-500">Next Seed</span>
-                        <span class="font-cinzel text-2xl font-semibold text-gray-700 dark:text-gray-200">
-                            <%= new Date(nextSeedDate).toLocaleString('en-GB', {
-                                timeZone: 'Europe/Paris', weekday: 'short', day: 'numeric',
-                                month: 'short', hour: '2-digit', minute: '2-digit'
-                            }) %>
-                        </span>
-                        <span id="countdown" class="block text-xs mt-1 font-mono tracking-wider text-amber-600 dark:text-amber-500"></span>
-                    </div>
-                    <script>
-                        (function () {
-                            const target = new Date('<%= new Date(nextSeedDate).toISOString() %>');
-                            const el = document.getElementById('countdown');
-                            if (!el || isNaN(target.getTime())) return;
-                            function update() {
-                                const diff = target - Date.now();
-                                if (diff <= 0) { el.textContent = 'Refresh for new seed!'; return; }
-                                const d = Math.floor(diff / 86400000);
-                                const h = Math.floor((diff % 86400000) / 3600000);
-                                const m = Math.floor((diff % 3600000) / 60000);
-                                const s = Math.floor((diff % 60000) / 1000);
-                                el.textContent = d > 0
-                                    ? `in ${d}d ${h}h ${String(m).padStart(2,'0')}m`
-                                    : `in ${h}h ${String(m).padStart(2,'0')}m ${String(s).padStart(2,'0')}s`;
-                                setTimeout(update, 1000);
-                            }
-                            update();
-                        })();
-                    </script>
-                    <% } %>
-                    <a href="<%= seed.seedUrl %>" target="_blank"
-                        class="font-cinzel uppercase tracking-wider text-sm font-bold bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-gray-900 px-8 py-3 rounded-lg shadow-md shadow-amber-200 dark:shadow-amber-900/40 transition-all duration-200 hover:shadow-lg hover:shadow-amber-200 dark:hover:shadow-amber-900/50 hover:-translate-y-px">
-                        Download Seed
-                    </a>
-                </div>
-            </div>
-
-            <div class="gold-line mx-8"></div>
-
-            <%/* ── Submit form ─────────────────────────────────────── */%>
-            <div class="px-8 py-8">
-                <h2 class="font-cinzel text-sm font-semibold tracking-widest uppercase mb-5 text-amber-700 dark:text-amber-300">
-                    Submit my time
-                </h2>
-                <form action="/score" method="POST" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <input type="text" name="playerName" placeholder="Player name" required
-                        class="rounded-lg px-4 py-3 text-sm
-                               bg-white dark:bg-gray-800
-                               border border-stone-300 dark:border-gray-600
-                               text-gray-900 dark:text-gray-100
-                               placeholder-stone-400 dark:placeholder-gray-500
-                               outline-none focus:border-amber-500 dark:focus:border-amber-500
-                               focus:shadow-[0_0_0_3px_rgba(245,158,11,0.18)]
-                               transition-[border-color,box-shadow] duration-200">
-                    <input type="text" name="time" placeholder="Time (ex: 1:23:45 or ff)"
-                        class="rounded-lg px-4 py-3 text-sm font-mono
-                               bg-white dark:bg-gray-800
-                               border border-stone-300 dark:border-gray-600
-                               text-gray-900 dark:text-gray-100
-                               placeholder-stone-400 dark:placeholder-gray-500
-                               outline-none focus:border-amber-500 dark:focus:border-amber-500
-                               focus:shadow-[0_0_0_3px_rgba(245,158,11,0.18)]
-                               transition-[border-color,box-shadow] duration-200">
-                    <input type="text" name="vodUrl" placeholder="VOD link (optional)"
-                        class="rounded-lg px-4 py-3 text-sm
-                               bg-white dark:bg-gray-800
-                               border border-stone-300 dark:border-gray-600
-                               text-gray-900 dark:text-gray-100
-                               placeholder-stone-400 dark:placeholder-gray-500
-                               outline-none focus:border-amber-500 dark:focus:border-amber-500
-                               focus:shadow-[0_0_0_3px_rgba(245,158,11,0.18)]
-                               transition-[border-color,box-shadow] duration-200">
-                    <input type="text" name="comment" placeholder="Comment (optional)"
-                        class="rounded-lg px-4 py-3 text-sm
-                               bg-white dark:bg-gray-800
-                               border border-stone-300 dark:border-gray-600
-                               text-gray-900 dark:text-gray-100
-                               placeholder-stone-400 dark:placeholder-gray-500
-                               outline-none focus:border-amber-500 dark:focus:border-amber-500
-                               focus:shadow-[0_0_0_3px_rgba(245,158,11,0.18)]
-                               transition-[border-color,box-shadow] duration-200">
-                    <button type="submit"
-                        class="lg:col-span-4 font-cinzel uppercase tracking-widest text-sm font-semibold py-3 rounded-lg
-                               border border-amber-400 dark:border-amber-700/60
-                               text-amber-700 dark:text-amber-400
-                               hover:bg-amber-500 hover:text-gray-900 hover:border-amber-500
-                               dark:hover:bg-amber-500 dark:hover:text-gray-900 dark:hover:border-amber-500
-                               active:bg-amber-600 active:border-amber-600
-                               transition-all duration-300">
-                        Submit Time
-                    </button>
-                </form>
-            </div>
-
-            <div class="gold-line mx-8"></div>
-
-            <%/* ── Standings ───────────────────────────────────────── */%>
-            <div class="px-8 py-8">
-                <details class="group">
-                    <summary class="flex justify-between items-center cursor-pointer select-none list-none">
-                        <h2 class="font-cinzel text-sm font-semibold tracking-widest uppercase
-                                   text-amber-700 dark:text-amber-300 group-hover:text-amber-600 dark:group-hover:text-amber-400
-                                   transition-colors duration-200">
-                            Weekly Standings
-                            <% if (seed.scores && seed.scores.length > 0) { %>
-                            <span class="font-sans font-normal normal-case tracking-normal text-xs ml-2 text-stone-400 dark:text-gray-600">
-                                (<%= seed.scores.length %> participant<%= seed.scores.length !== 1 ? 's' : '' %>)
-                            </span>
-                            <% } %>
-                        </h2>
-                        <span class="text-amber-500 dark:text-amber-600 transition-transform duration-300 group-open:rotate-180">
-                            <svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="18">
-                                <path d="M6 9l6 6 6-6"/>
-                            </svg>
-                        </span>
-                    </summary>
-
-                    <% if (seed.scores && seed.scores.length > 0) { %>
-
-                    <%/* ── Mode toggle ────────────────────────────────── */%>
-                    <div class="mt-5 mb-4 flex gap-2">
-                        <button id="btn-masked" onclick="standingsMode('masked')"
-                            class="font-cinzel text-xs uppercase tracking-widest px-4 py-2 rounded-lg border transition-all duration-200
-                                   bg-amber-500 text-gray-900 border-amber-500">
-                            Players only
-                        </button>
-                        <button id="btn-full" onclick="standingsMode('full')"
-                            class="font-cinzel text-xs uppercase tracking-widest px-4 py-2 rounded-lg border transition-all duration-200
-                                   border-amber-300 dark:border-amber-800/40 text-amber-600 dark:text-amber-700
-                                   hover:border-amber-400 dark:hover:border-amber-700/60">
-                            Full standings
-                        </button>
-                    </div>
-
-                    <%/* ── Masked view: names only, alphabetical ──────── */%>
-                    <div id="standings-masked" class="overflow-x-auto">
-                        <ul class="divide-y divide-stone-100 dark:divide-gray-800/60">
-                            <% [...seed.scores].sort((a, b) => a.playerName.localeCompare(b.playerName)).forEach(score => { %>
-                            <li class="py-3 px-3 font-semibold text-gray-800 dark:text-gray-100">
-                                <%= score.playerName %>
-                            </li>
-                            <% }) %>
-                        </ul>
-                    </div>
-
-                    <%/* ── Full standings table ───────────────────────── */%>
-                    <div id="standings-full" class="hidden overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead>
-                                <tr class="font-cinzel text-xs tracking-widest uppercase border-b border-amber-200 dark:border-amber-800/40
-                                           text-stone-400 dark:text-gray-500">
-                                    <th class="pb-3 px-3 w-10">#</th>
-                                    <th class="pb-3 px-3">Player</th>
-                                    <th class="pb-3 px-3 text-right">Time</th>
-                                    <th class="pb-3 px-3 text-center">VOD</th>
-                                    <th class="pb-3 px-3">Comment</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <% let rank = 0; %>
-                                <% seed.scores.forEach((score) => { %>
-                                    <% if (score.time !== null) rank++; %>
-                                    <tr class="border-b border-stone-100 dark:border-gray-800/60
-                                               hover:bg-amber-50 dark:hover:bg-amber-900/10
-                                               transition-colors duration-150">
-                                        <td class="py-3 px-3 font-cinzel text-sm font-semibold
-                                            <%= score.time === null ? 'text-stone-300 dark:text-gray-700' :
-                                               rank === 1 ? 'text-amber-500 dark:text-amber-400' :
-                                               rank === 2 ? 'text-stone-400 dark:text-gray-400' :
-                                               rank === 3 ? 'text-amber-700 dark:text-amber-700' :
-                                                            'text-stone-400 dark:text-gray-600' %>">
-                                            <%= score.time === null ? '—' : rank %>
-                                        </td>
-                                        <td class="py-3 px-3 font-semibold text-gray-800 dark:text-gray-100">
-                                            <%= score.playerName %>
-                                        </td>
-                                        <td class="py-3 px-3 text-right font-mono text-sm
-                                            <%= score.time === null ? 'text-red-500 dark:text-red-400 italic' : 'text-amber-600 dark:text-amber-300' %>">
-                                            <%= formatTime(score.time) %>
-                                        </td>
-                                        <td class="py-3 px-3 text-center">
-                                            <% if (score.vodUrl) { %>
-                                                <a href="<%= score.vodUrl %>" target="_blank"
-                                                    class="text-amber-500 dark:text-amber-700 hover:text-amber-600 dark:hover:text-amber-400 transition-colors duration-150 inline-block">
-                                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                                        <path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 .61 0 1.3-.1 2.1-.06.8-.15 1.43-.28 1.9-.13.47-.45.85-.94 1.14-.49.28-1.23.42-2.22.42-1 0-1.83-.02-2.5-.07-.66-.04-1.3-.1-1.92-.16-.62-.06-1.12-.12-1.5-.18-.38-.06-.8-.1-1.26-.1l-1.28.1c-.46 0-.88.04-1.26.1-.38.06-.88.12-1.5.18-.62.06-1.26.12-1.92.16-.66.05-1.5.07-2.5.07-.99 0-1.73-.14-2.22-.42-.49-.29-.81-.67-.94-1.14-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-.61 0-1.3.1-2.1.06-.8.15-1.43.28-1.9.13-.47.45-.85.94-1.14.49-.28 1.23-.42 2.22-.42 1 0 1.83.02 2.5.07.66.04 1.3.1 1.92.16.62.06 1.12.12 1.5.18.38.06.8.1 1.26.1l1.28-.1c.46 0 .88-.04 1.26-.1.38-.06.88-.12 1.5-.18.62-.06 1.26-.12 1.92-.16.66-.05 1.5-.07 2.5-.07.99 0 1.73.14 2.22.42.49.29.81.67.94 1.14z"/>
-                                                    </svg>
-                                                </a>
-                                            <% } else { %>
-                                                <span class="text-stone-200 dark:text-gray-700">—</span>
-                                            <% } %>
-                                        </td>
-                                        <td class="py-3 px-3 text-sm italic text-stone-400 dark:text-gray-600">
-                                            <%= score.comment || '—' %>
-                                        </td>
-                                    </tr>
-                                <% }) %>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <script>
-                        function standingsMode(mode) {
-                            const isFull = mode === 'full';
-                            document.getElementById('standings-masked').classList.toggle('hidden', isFull);
-                            document.getElementById('standings-full').classList.toggle('hidden', !isFull);
-                            const activeClass = ['bg-amber-500', 'text-gray-900', 'border-amber-500'];
-                            const inactiveClass = ['border-amber-300', 'dark:border-amber-800/40', 'text-amber-600', 'dark:text-amber-700'];
-                            const btnMasked = document.getElementById('btn-masked');
-                            const btnFull = document.getElementById('btn-full');
-                            activeClass.forEach(c => {
-                                btnMasked.classList.toggle(c, !isFull);
-                                btnFull.classList.toggle(c, isFull);
-                            });
-                            inactiveClass.forEach(c => {
-                                btnMasked.classList.toggle(c, isFull);
-                                btnFull.classList.toggle(c, !isFull);
-                            });
-                        }
-                    </script>
-
-                    <% } else { %>
-                    <div class="mt-5">
-                        <p class="text-center py-10 font-cinzel tracking-wide italic text-stone-400 dark:text-gray-600">
-                            No times recorded yet — be the first hero!
-                        </p>
-                    </div>
-                    <% } %>
-                </details>
-            </div>
-
+        <%/* ── Leaderboard tabs (only shown when 2+) ──────────────── */%>
+        <% if (leaderboards.length > 1) { %>
+        <div class="flex gap-2 mb-6">
+            <% leaderboards.forEach(lb => { %>
+            <button id="tab-btn-<%= lb.id %>" onclick="switchTab(<%= lb.id %>)"
+                class="font-cinzel text-xs uppercase tracking-widest px-5 py-2 rounded-lg border transition-all duration-200">
+                <%= lb.name %>
+            </button>
+            <% }) %>
         </div>
+        <% } %>
+
+        <%/* ── One panel per leaderboard ─────────────────────────── */%>
+        <% leaderboards.forEach(lb => { %>
+        <div id="tab-<%= lb.id %>">
+
+            <% if (lb.seed) { %>
+            <div class="bg-white/80 dark:bg-gray-900/70 border border-amber-200 dark:border-amber-800/30 rounded-xl shadow-xl shadow-amber-100/50 dark:shadow-black/50 overflow-hidden transition-colors duration-300">
+
+                <%/* ── Seed info ──────────────────────────────────── */%>
+                <div class="px-8 pt-10 pb-8">
+                    <h1 class="font-cinzel text-4xl font-bold text-center tracking-wider mb-8 text-amber-700 dark:text-amber-400">
+                        Weekly Seed
+                    </h1>
+                    <div class="flex flex-wrap justify-center items-center gap-10">
+                        <div class="text-center">
+                            <span class="block text-xs tracking-widest uppercase mb-1 text-stone-400 dark:text-gray-500">Preset</span>
+                            <span class="font-cinzel text-2xl font-semibold text-amber-600 dark:text-amber-300">
+                                <%= lb.seed.preset.replace('seed_', '').toUpperCase() %>
+                            </span>
+                        </div>
+                        <div class="text-center">
+                            <span class="block text-xs tracking-widest uppercase mb-1 text-stone-400 dark:text-gray-500">Version</span>
+                            <span class="font-cinzel text-2xl font-semibold text-gray-700 dark:text-gray-200">
+                                <%= lb.seed.version %>
+                            </span>
+                        </div>
+                        <div class="text-center">
+                            <span class="block text-xs tracking-widest uppercase mb-1 text-stone-400 dark:text-gray-500">Generated</span>
+                            <span class="font-cinzel text-2xl font-semibold text-gray-700 dark:text-gray-200">
+                                <%= new Date(lb.seed.createdAt).toLocaleString('en-GB', {
+                                    timeZone: 'Europe/Paris', day: 'numeric', month: 'short',
+                                    year: 'numeric', hour: '2-digit', minute: '2-digit'
+                                }) %>
+                            </span>
+                        </div>
+                        <% if (nextSeedDate) { %>
+                        <div class="text-center">
+                            <span class="block text-xs tracking-widest uppercase mb-1 text-stone-400 dark:text-gray-500">Next Seed</span>
+                            <span class="font-cinzel text-2xl font-semibold text-gray-700 dark:text-gray-200">
+                                <%= new Date(nextSeedDate).toLocaleString('en-GB', {
+                                    timeZone: 'Europe/Paris', weekday: 'short', day: 'numeric',
+                                    month: 'short', hour: '2-digit', minute: '2-digit'
+                                }) %>
+                            </span>
+                            <span id="countdown-<%= lb.id %>" class="block text-xs mt-1 font-mono tracking-wider text-amber-600 dark:text-amber-500"></span>
+                        </div>
+                        <% } %>
+                        <a href="<%= lb.seed.seedUrl %>" target="_blank"
+                            class="font-cinzel uppercase tracking-wider text-sm font-bold bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-gray-900 px-8 py-3 rounded-lg shadow-md shadow-amber-200 dark:shadow-amber-900/40 transition-all duration-200 hover:shadow-lg hover:shadow-amber-200 dark:hover:shadow-amber-900/50 hover:-translate-y-px">
+                            Download Seed
+                        </a>
+                    </div>
+                </div>
+
+                <div class="gold-line mx-8"></div>
+
+                <%/* ── Submit form ─────────────────────────────────── */%>
+                <div class="px-8 py-8">
+                    <h2 class="font-cinzel text-sm font-semibold tracking-widest uppercase mb-5 text-amber-700 dark:text-amber-300">
+                        Submit my time
+                    </h2>
+                    <form action="/score" method="POST" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <input type="hidden" name="leaderboardId" value="<%= lb.id %>">
+                        <input type="text" name="playerName" placeholder="Player name" required
+                            class="rounded-lg px-4 py-3 text-sm
+                                   bg-white dark:bg-gray-800
+                                   border border-stone-300 dark:border-gray-600
+                                   text-gray-900 dark:text-gray-100
+                                   placeholder-stone-400 dark:placeholder-gray-500
+                                   outline-none focus:border-amber-500 dark:focus:border-amber-500
+                                   focus:shadow-[0_0_0_3px_rgba(245,158,11,0.18)]
+                                   transition-[border-color,box-shadow] duration-200">
+                        <input type="text" name="time" placeholder="Time (ex: 1:23:45 or ff)"
+                            class="rounded-lg px-4 py-3 text-sm font-mono
+                                   bg-white dark:bg-gray-800
+                                   border border-stone-300 dark:border-gray-600
+                                   text-gray-900 dark:text-gray-100
+                                   placeholder-stone-400 dark:placeholder-gray-500
+                                   outline-none focus:border-amber-500 dark:focus:border-amber-500
+                                   focus:shadow-[0_0_0_3px_rgba(245,158,11,0.18)]
+                                   transition-[border-color,box-shadow] duration-200">
+                        <input type="text" name="vodUrl" placeholder="VOD link (optional)"
+                            class="rounded-lg px-4 py-3 text-sm
+                                   bg-white dark:bg-gray-800
+                                   border border-stone-300 dark:border-gray-600
+                                   text-gray-900 dark:text-gray-100
+                                   placeholder-stone-400 dark:placeholder-gray-500
+                                   outline-none focus:border-amber-500 dark:focus:border-amber-500
+                                   focus:shadow-[0_0_0_3px_rgba(245,158,11,0.18)]
+                                   transition-[border-color,box-shadow] duration-200">
+                        <input type="text" name="comment" placeholder="Comment (optional)"
+                            class="rounded-lg px-4 py-3 text-sm
+                                   bg-white dark:bg-gray-800
+                                   border border-stone-300 dark:border-gray-600
+                                   text-gray-900 dark:text-gray-100
+                                   placeholder-stone-400 dark:placeholder-gray-500
+                                   outline-none focus:border-amber-500 dark:focus:border-amber-500
+                                   focus:shadow-[0_0_0_3px_rgba(245,158,11,0.18)]
+                                   transition-[border-color,box-shadow] duration-200">
+                        <button type="submit"
+                            class="lg:col-span-4 font-cinzel uppercase tracking-widest text-sm font-semibold py-3 rounded-lg
+                                   border border-amber-400 dark:border-amber-700/60
+                                   text-amber-700 dark:text-amber-400
+                                   hover:bg-amber-500 hover:text-gray-900 hover:border-amber-500
+                                   dark:hover:bg-amber-500 dark:hover:text-gray-900 dark:hover:border-amber-500
+                                   active:bg-amber-600 active:border-amber-600
+                                   transition-all duration-300">
+                            Submit Time
+                        </button>
+                    </form>
+                </div>
+
+                <div class="gold-line mx-8"></div>
+
+                <%/* ── Standings ───────────────────────────────────── */%>
+                <div class="px-8 py-8">
+                    <details class="group">
+                        <summary class="flex justify-between items-center cursor-pointer select-none list-none">
+                            <h2 class="font-cinzel text-sm font-semibold tracking-widest uppercase
+                                       text-amber-700 dark:text-amber-300 group-hover:text-amber-600 dark:group-hover:text-amber-400
+                                       transition-colors duration-200">
+                                Weekly Standings
+                                <% if (lb.seed.scores && lb.seed.scores.length > 0) { %>
+                                <span class="font-sans font-normal normal-case tracking-normal text-xs ml-2 text-stone-400 dark:text-gray-600">
+                                    (<%= lb.seed.scores.length %> participant<%= lb.seed.scores.length !== 1 ? 's' : '' %>)
+                                </span>
+                                <% } %>
+                            </h2>
+                            <span class="text-amber-500 dark:text-amber-600 transition-transform duration-300 group-open:rotate-180">
+                                <svg fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="18">
+                                    <path d="M6 9l6 6 6-6"/>
+                                </svg>
+                            </span>
+                        </summary>
+
+                        <% if (lb.seed.scores && lb.seed.scores.length > 0) { %>
+
+                        <%/* ── Mode toggle ───────────────────────────── */%>
+                        <div class="mt-5 mb-4 flex gap-2">
+                            <button id="btn-masked-<%= lb.id %>" onclick="standingsMode('<%= lb.id %>', 'masked')"
+                                class="font-cinzel text-xs uppercase tracking-widest px-4 py-2 rounded-lg border transition-all duration-200
+                                       bg-amber-500 text-gray-900 border-amber-500">
+                                Players only
+                            </button>
+                            <button id="btn-full-<%= lb.id %>" onclick="standingsMode('<%= lb.id %>', 'full')"
+                                class="font-cinzel text-xs uppercase tracking-widest px-4 py-2 rounded-lg border transition-all duration-200
+                                       border-amber-300 dark:border-amber-800/40 text-amber-600 dark:text-amber-700
+                                       hover:border-amber-400 dark:hover:border-amber-700/60">
+                                Full standings
+                            </button>
+                        </div>
+
+                        <%/* ── Masked view ───────────────────────────── */%>
+                        <div id="standings-masked-<%= lb.id %>" class="overflow-x-auto">
+                            <ul class="divide-y divide-stone-100 dark:divide-gray-800/60">
+                                <% [...lb.seed.scores].sort((a, b) => a.playerName.localeCompare(b.playerName)).forEach(score => { %>
+                                <li class="py-3 px-3 font-semibold text-gray-800 dark:text-gray-100">
+                                    <%= score.playerName %>
+                                </li>
+                                <% }) %>
+                            </ul>
+                        </div>
+
+                        <%/* ── Full standings table ──────────────────── */%>
+                        <div id="standings-full-<%= lb.id %>" class="hidden overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr class="font-cinzel text-xs tracking-widest uppercase border-b border-amber-200 dark:border-amber-800/40
+                                               text-stone-400 dark:text-gray-500">
+                                        <th class="pb-3 px-3 w-10">#</th>
+                                        <th class="pb-3 px-3">Player</th>
+                                        <th class="pb-3 px-3 text-right">Time</th>
+                                        <th class="pb-3 px-3 text-center">VOD</th>
+                                        <th class="pb-3 px-3">Comment</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <% let rank = 0; %>
+                                    <% lb.seed.scores.forEach((score) => { %>
+                                        <% if (score.time !== null) rank++; %>
+                                        <tr class="border-b border-stone-100 dark:border-gray-800/60
+                                                   hover:bg-amber-50 dark:hover:bg-amber-900/10
+                                                   transition-colors duration-150">
+                                            <td class="py-3 px-3 font-cinzel text-sm font-semibold
+                                                <%= score.time === null ? 'text-stone-300 dark:text-gray-700' :
+                                                   rank === 1 ? 'text-amber-500 dark:text-amber-400' :
+                                                   rank === 2 ? 'text-stone-400 dark:text-gray-400' :
+                                                   rank === 3 ? 'text-amber-700 dark:text-amber-700' :
+                                                                'text-stone-400 dark:text-gray-600' %>">
+                                                <%= score.time === null ? '—' : rank %>
+                                            </td>
+                                            <td class="py-3 px-3 font-semibold text-gray-800 dark:text-gray-100">
+                                                <%= score.playerName %>
+                                            </td>
+                                            <td class="py-3 px-3 text-right font-mono text-sm
+                                                <%= score.time === null ? 'text-red-500 dark:text-red-400 italic' : 'text-amber-600 dark:text-amber-300' %>">
+                                                <%= formatTime(score.time) %>
+                                            </td>
+                                            <td class="py-3 px-3 text-center">
+                                                <% if (score.vodUrl) { %>
+                                                    <a href="<%= score.vodUrl %>" target="_blank"
+                                                        class="text-amber-500 dark:text-amber-700 hover:text-amber-600 dark:hover:text-amber-400 transition-colors duration-150 inline-block">
+                                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                                            <path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 .61 0 1.3-.1 2.1-.06.8-.15 1.43-.28 1.9-.13.47-.45.85-.94 1.14-.49.28-1.23.42-2.22.42-1 0-1.83-.02-2.5-.07-.66-.04-1.3-.1-1.92-.16-.62-.06-1.12-.12-1.5-.18-.38-.06-.8-.1-1.26-.1l-1.28.1c-.46 0-.88.04-1.26.1-.38.06-.88.12-1.5.18-.62.06-1.26.12-1.92.16-.66.05-1.5.07-2.5.07-.99 0-1.73-.14-2.22-.42-.49-.29-.81-.67-.94-1.14-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-.61 0-1.3.1-2.1.06-.8.15-1.43.28-1.9.13-.47.45-.85.94-1.14.49-.28 1.23-.42 2.22-.42 1 0 1.83.02 2.5.07.66.04 1.3.1 1.92.16.62.06 1.12.12 1.5.18.38.06.8.1 1.26.1l1.28-.1c.46 0 .88-.04 1.26-.1.38-.06.88-.12 1.5-.18.62-.06 1.26-.12 1.92-.16.66-.05 1.5-.07 2.5-.07.99 0 1.73.14 2.22.42.49.29.81.67.94 1.14z"/>
+                                                        </svg>
+                                                    </a>
+                                                <% } else { %>
+                                                    <span class="text-stone-200 dark:text-gray-700">—</span>
+                                                <% } %>
+                                            </td>
+                                            <td class="py-3 px-3 text-sm italic text-stone-400 dark:text-gray-600">
+                                                <%= score.comment || '—' %>
+                                            </td>
+                                        </tr>
+                                    <% }) %>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <% } else { %>
+                        <div class="mt-5">
+                            <p class="text-center py-10 font-cinzel tracking-wide italic text-stone-400 dark:text-gray-600">
+                                No times recorded yet — be the first hero!
+                            </p>
+                        </div>
+                        <% } %>
+                    </details>
+                </div>
+
+            </div>
+
+            <% } else { %>
+            <div class="text-center py-24 font-cinzel">
+                <p class="text-2xl tracking-wide text-stone-400 dark:text-gray-500">No active seed for <%= lb.name %>.</p>
+                <p class="text-sm mt-3 tracking-widest text-stone-300 dark:text-gray-700">Come back later, brave adventurer.</p>
+            </div>
+            <% } %>
+
+        </div><%/* end tab panel */%>
+        <% }) %>
 
         <% } else { %>
         <div class="text-center py-24 font-cinzel">
@@ -355,6 +344,88 @@
             &copy; 2026 OoT Randomizer Async Weekly
         </p>
     </footer>
+
+    <%/* Data passed to JS via data-attributes to keep script blocks EJS-free */%>
+    <div id="__page_cfg__" hidden
+         data-tab-ids="<%= (leaderboards || []).map(lb => lb.id).join(',') %>"
+         data-active-lb-id="<%= (activeLbId !== null && activeLbId !== undefined) ? activeLbId : '' %>"
+         data-next-seed-iso="<%= nextSeedDate ? new Date(nextSeedDate).toISOString() : '' %>">
+    </div>
+
+    <script>
+        const cfg = document.getElementById('__page_cfg__').dataset;
+        const tabIds = cfg.tabIds ? cfg.tabIds.split(',').map(Number) : [];
+        const serverActiveLbId = cfg.activeLbId ? parseInt(cfg.activeLbId, 10) : null;
+
+        function switchTab(id) {
+            tabIds.forEach(tid => {
+                const panel = document.getElementById('tab-' + tid);
+                if (panel) panel.classList.toggle('hidden', tid !== id);
+                const btn = document.getElementById('tab-btn-' + tid);
+                if (!btn) return;
+                const active = tid === id;
+                btn.classList.toggle('bg-amber-500', active);
+                btn.classList.toggle('text-gray-900', active);
+                btn.classList.toggle('border-amber-500', active);
+                btn.classList.toggle('border-amber-300', !active);
+                btn.classList.toggle('dark:border-amber-800/40', !active);
+                btn.classList.toggle('text-amber-600', !active);
+                btn.classList.toggle('dark:text-amber-700', !active);
+            });
+            try { sessionStorage.setItem('ootAsyncActiveLb', String(id)); } catch (_) {}
+        }
+
+        if (tabIds.length > 0) {
+            let storedId = null;
+            try { storedId = parseInt(sessionStorage.getItem('ootAsyncActiveLb') || '', 10) || null; } catch (_) {}
+            const initialId = (serverActiveLbId && tabIds.includes(serverActiveLbId)) ? serverActiveLbId
+                            : (storedId && tabIds.includes(storedId)) ? storedId
+                            : tabIds[0];
+            switchTab(initialId);
+        }
+
+        function standingsMode(lbId, mode) {
+            const isFull = mode === 'full';
+            document.getElementById('standings-masked-' + lbId).classList.toggle('hidden', isFull);
+            document.getElementById('standings-full-' + lbId).classList.toggle('hidden', !isFull);
+            const activeClass = ['bg-amber-500', 'text-gray-900', 'border-amber-500'];
+            const inactiveClass = ['border-amber-300', 'dark:border-amber-800/40', 'text-amber-600', 'dark:text-amber-700'];
+            const btnMasked = document.getElementById('btn-masked-' + lbId);
+            const btnFull = document.getElementById('btn-full-' + lbId);
+            activeClass.forEach(c => {
+                btnMasked.classList.toggle(c, !isFull);
+                btnFull.classList.toggle(c, isFull);
+            });
+            inactiveClass.forEach(c => {
+                btnMasked.classList.toggle(c, isFull);
+                btnFull.classList.toggle(c, !isFull);
+            });
+        }
+
+        (function () {
+            const iso = cfg.nextSeedIso;
+            if (!iso) return;
+            const target = new Date(iso);
+            if (isNaN(target.getTime())) return;
+            function update() {
+                const diff = target - Date.now();
+                tabIds.forEach(tid => {
+                    const el = document.getElementById('countdown-' + tid);
+                    if (!el) return;
+                    if (diff <= 0) { el.textContent = 'Refresh for new seed!'; return; }
+                    const d = Math.floor(diff / 86400000);
+                    const h = Math.floor((diff % 86400000) / 3600000);
+                    const m = Math.floor((diff % 3600000) / 60000);
+                    const s = Math.floor((diff % 60000) / 1000);
+                    el.textContent = d > 0
+                        ? 'in ' + d + 'd ' + h + 'h ' + String(m).padStart(2, '0') + 'm'
+                        : 'in ' + h + 'h ' + String(m).padStart(2, '0') + 'm ' + String(s).padStart(2, '0') + 's';
+                });
+                setTimeout(update, 1000);
+            }
+            update();
+        })();
+    </script>
 
 </body>
 </html>

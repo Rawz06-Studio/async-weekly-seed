@@ -6,26 +6,34 @@ import type { Response } from 'express';
 describe('AppController', () => {
   let controller: AppController;
 
+  const mockLeaderboard = {
+    id: 1,
+    name: 'Weekly',
+    presetWeights: '{"seed_s9": 100}',
+    seed: { id: 1, preset: 'seed_s9', scores: [] },
+  };
+
   const mockAppService = {
-    getCurrentSeed: jest.fn(),
+    getLeaderboardsWithActiveSeeds: jest
+      .fn()
+      .mockResolvedValue([mockLeaderboard]),
     getNextSeedDate: jest
       .fn()
       .mockReturnValue(new Date('2026-05-13T18:00:00.000Z')),
     addScore: jest.fn(),
     getArchives: jest.fn(),
     getArchiveById: jest.fn(),
-    generateNewSeed: jest.fn(),
+    handleCron: jest.fn(),
+    getLeaderboardsWithRulesets: jest.fn().mockResolvedValue([]),
+    getUpcomingPresets: jest
+      .fn()
+      .mockResolvedValue({ leaderboards: [], rows: [] }),
   };
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AppController],
-      providers: [
-        {
-          provide: AppService,
-          useValue: mockAppService,
-        },
-      ],
+      providers: [{ provide: AppService, useValue: mockAppService }],
     }).compile();
 
     controller = module.get<AppController>(AppController);
@@ -36,11 +44,9 @@ describe('AppController', () => {
   });
 
   describe('getHome', () => {
-    it('should return current seed', async () => {
-      const seed = { id: 1 };
-      mockAppService.getCurrentSeed.mockResolvedValue(seed);
+    it('should return leaderboards with active seeds', async () => {
       const result = await controller.getHome();
-      expect(result).toMatchObject({ seed });
+      expect(result).toMatchObject({ leaderboards: [mockLeaderboard] });
     });
   });
 
@@ -50,12 +56,13 @@ describe('AppController', () => {
 
     beforeEach(() => mockRes.redirect.mockClear());
 
-    it('should call addScore if playerName is provided', async () => {
+    it('should call addScore and redirect on success', async () => {
       await controller.postScore(
         'Player',
         '1:23',
         'Comment',
         'http://vod',
+        '1',
         res,
       );
       expect(mockAppService.addScore).toHaveBeenCalledWith(
@@ -63,13 +70,14 @@ describe('AppController', () => {
         '1:23',
         'Comment',
         'http://vod',
+        1,
       );
-      expect(mockRes.redirect).toHaveBeenCalledWith('/');
+      expect(mockRes.redirect).toHaveBeenCalledWith('/?lbId=1');
     });
 
     it('should redirect with error if playerName is missing', async () => {
       mockAppService.addScore.mockClear();
-      await controller.postScore('', '1:23', 'Comment', '', res);
+      await controller.postScore('', '1:23', 'Comment', '', '1', res);
       expect(mockAppService.addScore).not.toHaveBeenCalled();
       expect(mockRes.redirect).toHaveBeenCalledWith(
         expect.stringContaining('/?error='),
@@ -80,7 +88,7 @@ describe('AppController', () => {
       mockAppService.addScore.mockRejectedValueOnce(
         new Error('Invalid time format'),
       );
-      await controller.postScore('Player', 'bad', '', '', res);
+      await controller.postScore('Player', 'bad', '', '', '1', res);
       expect(mockRes.redirect).toHaveBeenCalledWith(
         expect.stringContaining('Invalid%20time%20format'),
       );
@@ -106,9 +114,9 @@ describe('AppController', () => {
   });
 
   describe('forceGenerateSeed', () => {
-    it('should call generateNewSeed', async () => {
+    it('should call handleCron', async () => {
       await controller.forceGenerateSeed();
-      expect(mockAppService.generateNewSeed).toHaveBeenCalled();
+      expect(mockAppService.handleCron).toHaveBeenCalled();
     });
   });
 });

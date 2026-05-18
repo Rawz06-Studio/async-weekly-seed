@@ -9,6 +9,7 @@ import { AppService } from './app.service';
 import { WeeklySeed } from './entities/weekly-seed.entity';
 import { Score } from './entities/score.entity';
 import { PresetQueueItem } from './entities/preset-queue-item.entity';
+import { Leaderboard } from './entities/leaderboard.entity';
 
 @Module({
   imports: [
@@ -21,7 +22,7 @@ import { PresetQueueItem } from './entities/preset-queue-item.entity';
           return {
             type: 'sqljs',
             location: ':memory:',
-            entities: [WeeklySeed, Score, PresetQueueItem],
+            entities: [WeeklySeed, Score, PresetQueueItem, Leaderboard],
             synchronize: true,
           };
         }
@@ -32,12 +33,12 @@ import { PresetQueueItem } from './entities/preset-queue-item.entity';
           username: process.env.DATABASE_USER || 'postgres',
           password: process.env.DATABASE_PASSWORD || 'postgres',
           database: process.env.DATABASE_NAME || 'async_weekly_seed',
-          entities: [WeeklySeed, Score, PresetQueueItem],
+          entities: [WeeklySeed, Score, PresetQueueItem, Leaderboard],
           synchronize: true,
         };
       },
     }),
-    TypeOrmModule.forFeature([WeeklySeed, Score, PresetQueueItem]),
+    TypeOrmModule.forFeature([WeeklySeed, Score, PresetQueueItem, Leaderboard]),
     ScheduleModule.forRoot(),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'),

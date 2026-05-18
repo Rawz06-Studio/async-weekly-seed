@@ -55,7 +55,7 @@
         </div>
     </nav>
 
-    <main class="container mx-auto mt-10 px-4 pb-16 max-w-2xl">
+    <main class="container mx-auto mt-10 px-4 pb-16 max-w-3xl">
 
         <h1 class="font-cinzel text-4xl font-bold text-center tracking-wider mb-2 text-amber-700 dark:text-amber-400">
             Upcoming Seeds
@@ -65,50 +65,61 @@
         </p>
         <div class="gold-line max-w-xs mx-auto mb-10"></div>
 
-        <% if (upcoming && upcoming.length > 0) { %>
+        <% if (rows && rows.length > 0) { %>
+
+        <%
+            const badgeLight = { s9: 'bg-amber-100 text-amber-800 border-amber-300', tot: 'bg-purple-100 text-purple-800 border-purple-300', mixed: 'bg-emerald-100 text-emerald-800 border-emerald-300', rsl: 'bg-red-100 text-red-800 border-red-300' };
+            const badgeDark  = { s9: 'dark:bg-amber-900/50 dark:text-amber-300 dark:border-amber-700/50', tot: 'dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700/50', mixed: 'dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-700/50', rsl: 'dark:bg-red-900/50 dark:text-red-300 dark:border-red-700/50' };
+        %>
+
         <div class="bg-white/80 dark:bg-gray-900/70 border border-amber-200 dark:border-amber-800/20 rounded-xl shadow-sm overflow-hidden transition-colors duration-300">
             <table class="w-full text-left">
                 <thead>
                     <tr class="font-cinzel text-xs tracking-widest uppercase border-b border-amber-200 dark:border-amber-800/40 text-stone-400 dark:text-gray-500">
                         <th class="pb-3 pt-5 px-6">#</th>
-                        <th class="pb-3 pt-5 px-4">Week</th>
                         <th class="pb-3 pt-5 px-4">Date</th>
-                        <th class="pb-3 pt-5 px-4">Preset</th>
+                        <th class="pb-3 pt-5 px-3 text-xs font-mono normal-case tracking-normal text-stone-300 dark:text-gray-700">Time (Paris)</th>
+                        <% leaderboards.forEach(lb => { %>
+                        <th class="pb-3 pt-5 px-4"><%= lb.name %></th>
+                        <% }) %>
                     </tr>
                 </thead>
                 <tbody>
-                    <% upcoming.forEach((item, index) => { %>
-                    <%
-                        const key = item.preset.replace('seed_', '');
-                        const badgeLight = { s9: 'bg-amber-100 text-amber-800 border-amber-300', tot: 'bg-purple-100 text-purple-800 border-purple-300', mixed: 'bg-emerald-100 text-emerald-800 border-emerald-300', rsl: 'bg-red-100 text-red-800 border-red-300' };
-                        const badgeDark  = { s9: 'dark:bg-amber-900/50 dark:text-amber-300 dark:border-amber-700/50', tot: 'dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700/50', mixed: 'dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-700/50', rsl: 'dark:bg-red-900/50 dark:text-red-300 dark:border-red-700/50' };
-                        const bl = badgeLight[key] || 'bg-blue-100 text-blue-800 border-blue-300';
-                        const bd = badgeDark[key]  || 'dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700/50';
-                    %>
+                    <% rows.forEach((row, index) => { %>
                     <tr class="border-b border-stone-100 dark:border-gray-800/60 last:border-0
                                hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors duration-150">
                         <td class="py-4 px-6 font-cinzel text-sm font-semibold text-stone-400 dark:text-gray-600">
                             <%= index + 1 %>
                         </td>
                         <td class="py-4 px-4 font-cinzel text-sm font-semibold text-gray-700 dark:text-gray-300">
-                            <%= new Date(item.date).toLocaleDateString('en-GB', {
+                            <%= new Date(row.date).toLocaleDateString('en-GB', {
                                 timeZone: 'Europe/Paris',
-                                day: 'numeric', month: 'short', year: 'numeric'
+                                weekday: 'short', day: 'numeric', month: 'short', year: 'numeric'
                             }) %>
                         </td>
-                        <td class="py-4 px-4 text-xs font-mono text-stone-400 dark:text-gray-500">
-                            <%= new Date(item.date).toLocaleString('en-GB', {
+                        <td class="py-4 px-3 text-xs font-mono text-stone-400 dark:text-gray-600">
+                            <%= new Date(row.date).toLocaleTimeString('en-GB', {
                                 timeZone: 'Europe/Paris',
-                                weekday: 'short', hour: '2-digit', minute: '2-digit',
-                                timeZoneName: 'short'
+                                hour: '2-digit', minute: '2-digit', timeZoneName: 'short'
                             }) %>
                         </td>
+                        <% row.presets.forEach(preset => { %>
                         <td class="py-4 px-4">
+                            <% if (preset) { %>
+                            <%
+                                const key = preset.preset.replace('seed_', '');
+                                const bl = badgeLight[key] || 'bg-blue-100 text-blue-800 border-blue-300';
+                                const bd = badgeDark[key]  || 'dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700/50';
+                            %>
                             <span class="font-cinzel text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded border
                                          <%= bl %> <%= bd %>">
-                                <%= item.name %>
+                                <%= preset.name %>
                             </span>
+                            <% } else { %>
+                            <span class="text-stone-300 dark:text-gray-700">—</span>
+                            <% } %>
                         </td>
+                        <% }) %>
                     </tr>
                     <% }) %>
                 </tbody>
