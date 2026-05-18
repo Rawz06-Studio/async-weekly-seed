@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upcoming Seeds – OoT Randomizer Async Weekly</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'media',
+            theme: { extend: { fontFamily: { cinzel: ['Cinzel', 'serif'] } } }
+        }
+    </script>
+    <style>
+        :root {
+            --body-bg: #faf7f0;
+            --body-glow: radial-gradient(ellipse 80% 40% at 50% -5%, #fef3c7 0%, transparent 70%);
+            --gold-stop: rgba(180, 83, 9, 0.45);
+        }
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --body-bg: #0d0e1a;
+                --body-glow: radial-gradient(ellipse 80% 40% at 50% -5%, #1e1040 0%, transparent 70%);
+                --gold-stop: rgba(217, 119, 6, 0.5);
+            }
+        }
+        body { background-color: var(--body-bg); background-image: var(--body-glow); }
+        .gold-line {
+            height: 1px;
+            background: linear-gradient(to right, transparent, var(--gold-stop), transparent);
+        }
+    </style>
+</head>
+
+<body class="min-h-screen font-sans text-gray-900 dark:text-gray-100 transition-colors duration-300">
+
+    <nav class="sticky top-0 z-10 backdrop-blur-md bg-amber-50/80 dark:bg-black/50 border-b border-amber-200 dark:border-amber-800/30 transition-colors duration-300">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <a href="/" class="font-cinzel text-xl font-bold tracking-widest text-amber-700 dark:text-amber-400 hover:text-amber-600 dark:hover:text-amber-300 transition-colors duration-200">
+                △ OoTR Async Weekly
+            </a>
+            <div class="flex items-center gap-6">
+                <a href="/archives" class="font-cinzel text-xs tracking-widest uppercase text-stone-500 dark:text-gray-400 hover:text-amber-700 dark:hover:text-amber-400 transition-colors duration-200">
+                    Archives
+                </a>
+                <a href="/rulesets" class="font-cinzel text-xs tracking-widest uppercase text-stone-500 dark:text-gray-400 hover:text-amber-700 dark:hover:text-amber-400 transition-colors duration-200">
+                    Rulesets
+                </a>
+                <span class="font-cinzel text-xs tracking-widest uppercase text-amber-600 dark:text-amber-400 border-b border-amber-400 dark:border-amber-600 pb-px">
+                    Upcoming
+                </span>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto mt-10 px-4 pb-16 max-w-2xl">
+
+        <h1 class="font-cinzel text-4xl font-bold text-center tracking-wider mb-2 text-amber-700 dark:text-amber-400">
+            Upcoming Seeds
+        </h1>
+        <p class="text-center text-xs mb-8 tracking-widest font-cinzel text-stone-400 dark:text-gray-600">
+            Presets already drawn for the coming weeks
+        </p>
+        <div class="gold-line max-w-xs mx-auto mb-10"></div>
+
+        <% if (upcoming && upcoming.length > 0) { %>
+        <div class="bg-white/80 dark:bg-gray-900/70 border border-amber-200 dark:border-amber-800/20 rounded-xl shadow-sm overflow-hidden transition-colors duration-300">
+            <table class="w-full text-left">
+                <thead>
+                    <tr class="font-cinzel text-xs tracking-widest uppercase border-b border-amber-200 dark:border-amber-800/40 text-stone-400 dark:text-gray-500">
+                        <th class="pb-3 pt-5 px-6">#</th>
+                        <th class="pb-3 pt-5 px-4">Week</th>
+                        <th class="pb-3 pt-5 px-4">Date</th>
+                        <th class="pb-3 pt-5 px-4">Preset</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% upcoming.forEach((item, index) => { %>
+                    <%
+                        const key = item.preset.replace('seed_', '');
+                        const badgeLight = { s9: 'bg-amber-100 text-amber-800 border-amber-300', tot: 'bg-purple-100 text-purple-800 border-purple-300', mixed: 'bg-emerald-100 text-emerald-800 border-emerald-300', rsl: 'bg-red-100 text-red-800 border-red-300' };
+                        const badgeDark  = { s9: 'dark:bg-amber-900/50 dark:text-amber-300 dark:border-amber-700/50', tot: 'dark:bg-purple-900/50 dark:text-purple-300 dark:border-purple-700/50', mixed: 'dark:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-700/50', rsl: 'dark:bg-red-900/50 dark:text-red-300 dark:border-red-700/50' };
+                        const bl = badgeLight[key] || 'bg-blue-100 text-blue-800 border-blue-300';
+                        const bd = badgeDark[key]  || 'dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700/50';
+                    %>
+                    <tr class="border-b border-stone-100 dark:border-gray-800/60 last:border-0
+                               hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors duration-150">
+                        <td class="py-4 px-6 font-cinzel text-sm font-semibold text-stone-400 dark:text-gray-600">
+                            <%= index + 1 %>
+                        </td>
+                        <td class="py-4 px-4 font-cinzel text-sm font-semibold text-gray-700 dark:text-gray-300">
+                            <%= new Date(item.date).toLocaleDateString('en-GB', {
+                                timeZone: 'Europe/Paris',
+                                day: 'numeric', month: 'short', year: 'numeric'
+                            }) %>
+                        </td>
+                        <td class="py-4 px-4 text-xs font-mono text-stone-400 dark:text-gray-500">
+                            <%= new Date(item.date).toLocaleString('en-GB', {
+                                timeZone: 'Europe/Paris',
+                                weekday: 'short', hour: '2-digit', minute: '2-digit',
+                                timeZoneName: 'short'
+                            }) %>
+                        </td>
+                        <td class="py-4 px-4">
+                            <span class="font-cinzel text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded border
+                                         <%= bl %> <%= bd %>">
+                                <%= item.name %>
+                            </span>
+                        </td>
+                    </tr>
+                    <% }) %>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-6 p-4 rounded-lg border text-xs text-center font-cinzel tracking-widest
+                    bg-amber-50 dark:bg-amber-950/20
+                    border-amber-200 dark:border-amber-800/30
+                    text-stone-400 dark:text-gray-600">
+            Presets are pre-drawn using weighted random — the queue refills automatically each week.
+        </div>
+
+        <% } else { %>
+        <div class="text-center py-24 font-cinzel">
+            <p class="text-xl tracking-wide text-stone-400 dark:text-gray-600">No upcoming presets scheduled yet.</p>
+        </div>
+        <% } %>
+
+    </main>
+
+    <footer class="mt-4 pb-8 text-center">
+        <div class="gold-line max-w-xs mx-auto mb-6"></div>
+        <p class="font-cinzel text-xs tracking-widest uppercase text-stone-300 dark:text-gray-700">
+            &copy; 2026 OoT Randomizer Async Weekly
+        </p>
+    </footer>
+
+</body>
+</html>

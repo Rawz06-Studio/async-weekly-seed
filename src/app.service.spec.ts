@@ -3,8 +3,17 @@ import { AppService } from './app.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { WeeklySeed } from './entities/weekly-seed.entity';
 import { Score } from './entities/score.entity';
+import { PresetQueueItem } from './entities/preset-queue-item.entity';
 import { ConfigService } from '@nestjs/config';
 import { SchedulerRegistry } from '@nestjs/schedule';
+
+jest.mock('cron', () => ({
+  CronJob: jest.fn().mockImplementation(() => ({
+    start: jest.fn(),
+    stop: jest.fn(),
+    nextDate: jest.fn(),
+  })),
+}));
 
 describe('AppService', () => {
   let service: AppService;
@@ -31,6 +40,14 @@ describe('AppService', () => {
     save: jest.fn(),
   };
 
+  const mockPresetQueueRepository = {
+    count: jest.fn().mockResolvedValue(5),
+    findOne: jest.fn().mockResolvedValue({ id: 1, preset: 'seed_s9' }),
+    delete: jest.fn().mockResolvedValue({}),
+    create: jest.fn().mockImplementation((args: unknown) => args),
+    save: jest.fn().mockResolvedValue({}),
+  };
+
   const mockConfigService = {
     get: jest.fn().mockImplementation((key: string, defaultVal: unknown) => {
       if (key === 'SEED_CHANGE_DAY') return 3;
@@ -55,6 +72,10 @@ describe('AppService', () => {
         {
           provide: getRepositoryToken(Score),
           useValue: mockScoreRepository,
+        },
+        {
+          provide: getRepositoryToken(PresetQueueItem),
+          useValue: mockPresetQueueRepository,
         },
         {
           provide: ConfigService,

@@ -3,6 +3,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { WeeklySeed } from './entities/weekly-seed.entity';
 import { Score } from './entities/score.entity';
+import { PresetQueueItem } from './entities/preset-queue-item.entity';
 import { SchedulerRegistry } from '@nestjs/schedule';
 import { CronJob } from 'cron';
 import { ConfigService } from '@nestjs/config';
@@ -23,11 +24,15 @@ export class AppService implements OnModuleInit {
     private seedRepository: Repository<WeeklySeed>,
     @InjectRepository(Score)
     private scoreRepository: Repository<Score>,
+    @InjectRepository(PresetQueueItem)
+    private presetQueueRepository: Repository<PresetQueueItem>,
     private configService: ConfigService,
     private schedulerRegistry: SchedulerRegistry,
   ) {}
 
   async onModuleInit() {
+    await this.fillQueue();
+
     const currentSeed = await this.getCurrentSeed();
     if (!currentSeed) {
       this.logger.log('No seed found, generating initial seed...');
@@ -97,16 +102,27 @@ export class AppService implements OnModuleInit {
     // 1. Disable current seed
     await this.seedRepository.update({ isActive: true }, { isActive: false });
 
-    // 2. Choose a preset based on weights
-    const presetWeights = JSON.parse(
-      this.configService.get<string>(
-        'PRESET_WEIGHTS',
-        '{"seed_s9": 40, "seed_tot": 20, "seed_mixed": 20, "seed_rsl": 20}',
-      ),
-    ) as Record<string, number>;
-    const preset = this.weightedRandom(presetWeights);
+    // 2. Pop next preset from queue
+    const nextItem = await this.presetQueueRepository.findOne({
+      where: {},
+      order: { createdAt: 'ASC' },
+    });
 
-    // 3. Call API to generate seed
+    let preset: string;
+    if (nextItem) {
+      preset = nextItem.preset;
+      await this.presetQueueRepository.delete(nextItem.id);
+    } else {
+      this.logger.warn(
+        'Preset queue was empty, falling back to weighted random',
+      );
+      preset = this.weightedRandom(this.getPresetWeights());
+    }
+
+    // 3. Replenish queue by one to maintain target size
+    await this.pushToQueue(1);
+
+    // 4. Call API to generate seed
     const apiUrl = this.configService.get<string>('SEED_API_URL');
     try {
       this.logger.log(`Generating seed for preset: ${preset}`);
@@ -118,7 +134,7 @@ export class AppService implements OnModuleInit {
 
       const data = (await response.json()) as SeedApiResponse;
 
-      // 4. Save new seed
+      // 5. Save new seed
       const newSeed = this.seedRepository.create({
         seedUrl: data.seedUrl,
         preset: preset,
@@ -134,6 +150,80 @@ export class AppService implements OnModuleInit {
         `Failed to generate seed: ${error instanceof Error ? error.message : String(error)}`,
       );
     }
+  }
+
+  async getUpcomingPresets() {
+    const items = await this.presetQueueRepository.find({
+      order: { createdAt: 'ASC' },
+    });
+
+    const nextDate = this.getNextSeedDate();
+    if (!nextDate) return [];
+
+    const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+    return items.map((item, index) => ({
+      preset: item.preset,
+      name: item.preset.replace('seed_', '').toUpperCase(),
+      date: new Date(nextDate.getTime() + index * WEEK_MS),
+    }));
+  }
+
+  private getPresetWeights(): Record<string, number> {
+    return JSON.parse(
+      this.configService.get<string>(
+        'PRESET_WEIGHTS',
+        '{"seed_s9": 40, "seed_tot": 20, "seed_mixed": 20, "seed_rsl": 20}',
+      ),
+    ) as Record<string, number>;
+  }
+
+  private async fillQueue() {
+    const targetSize = this.configService.get<number>('PRESET_QUEUE_SIZE', 5);
+    const currentCount = await this.presetQueueRepository.count();
+    const toAdd = targetSize - currentCount;
+    if (toAdd > 0) {
+      this.logger.log(
+        `Filling preset queue: adding ${toAdd} item(s) (target: ${targetSize})`,
+      );
+      await this.pushToQueue(toAdd);
+    }
+  }
+
+  private async pushToQueue(count: number) {
+    const weights = this.getPresetWeights();
+    for (let i = 0; i < count; i++) {
+      await this.presetQueueRepository.save(
+        this.presetQueueRepository.create({
+          preset: this.weightedRandom(weights),
+        }),
+      );
+    }
+  }
+
+  getRulesets() {
+    const presetWeights = this.getPresetWeights();
+
+    const descriptions: Record<string, string> = {
+      seed_s9:
+        'Standard Season 9 — the main competitive tournament ruleset. Fixed, well-balanced settings used as the reference format for the weekly async.',
+      seed_tot:
+        'Tournament of Truth — the flagship tournament of the French-speaking OoTR community, with its own curated ruleset and competitive spirit.',
+      seed_mixed:
+        'Mixed Pools — all entrances are randomised across the board, turning every seed into an unpredictable adventure where nothing is where you expect it.',
+      seed_rsl:
+        'Random Settings League — each seed rolls a random combination of settings, keeping every run fresh. Currently running Season 7; presets will be updated as soon as Season 8 is announced.',
+    };
+
+    const totalWeight = Object.values(presetWeights).reduce((a, b) => a + b, 0);
+
+    return Object.entries(presetWeights).map(([key, weight]) => ({
+      key,
+      name: key.replace('seed_', '').toUpperCase(),
+      weight,
+      probability: Math.round((weight / totalWeight) * 100),
+      description: descriptions[key] ?? 'No description available.',
+    }));
   }
 
   private weightedRandom(weights: Record<string, number>): string {
