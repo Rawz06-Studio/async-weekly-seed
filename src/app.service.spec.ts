@@ -250,6 +250,81 @@ describe('AppService', () => {
       expect(global.fetch).toHaveBeenCalledWith('http://api/seed_s9');
     });
 
+    it('should send Discord notifications on success', async () => {
+      const data = {
+        seedUrl: 'https://newseed',
+        version: '1.0',
+        usedSettings: {},
+      };
+
+      const fetchMock = jest
+        .fn()
+        .mockResolvedValueOnce({
+          ok: true,
+          json: jest.fn().mockResolvedValue(data),
+        } as any)
+        .mockResolvedValue({ ok: true } as any);
+
+      global.fetch = fetchMock;
+
+      mockConfigService.get.mockImplementation(
+        (key: string, defaultValue: unknown) => {
+          if (key === 'SEED_API_URL') return 'http://api';
+          if (key === 'PRESET_QUEUE_SIZE') return 5;
+          if (key === 'DISCORD_WEBHOOKS')
+            return 'https://discord.example/wh1,https://discord.example/wh2';
+          return defaultValue;
+        },
+      );
+
+      mockSeedRepository.create.mockReturnValue({ ...data, preset: 'seed_s9' });
+      mockSeedRepository.save.mockResolvedValue({});
+
+      await service.generateNewSeed(mockLeaderboard);
+      await new Promise((r) => setTimeout(r, 0));
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://discord.example/wh1',
+        expect.objectContaining({ method: 'POST' }),
+      );
+      expect(fetchMock).toHaveBeenCalledWith(
+        'https://discord.example/wh2',
+        expect.objectContaining({ method: 'POST' }),
+      );
+    });
+
+    it('should not send Discord notifications when DISCORD_WEBHOOKS is empty', async () => {
+      const data = {
+        seedUrl: 'https://newseed',
+        version: '1.0',
+        usedSettings: {},
+      };
+
+      const fetchMock = jest.fn().mockResolvedValue({
+        ok: true,
+        json: jest.fn().mockResolvedValue(data),
+      } as any);
+
+      global.fetch = fetchMock;
+
+      mockConfigService.get.mockImplementation(
+        (key: string, defaultValue: unknown) => {
+          if (key === 'SEED_API_URL') return 'http://api';
+          if (key === 'PRESET_QUEUE_SIZE') return 5;
+          return defaultValue;
+        },
+      );
+
+      mockSeedRepository.create.mockReturnValue({ ...data, preset: 'seed_s9' });
+      mockSeedRepository.save.mockResolvedValue({});
+
+      await service.generateNewSeed(mockLeaderboard);
+      await new Promise((r) => setTimeout(r, 0));
+
+      expect(fetchMock).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledWith('http://api/seed_s9');
+    });
+
     it('should handle API failure', async () => {
       global.fetch = jest
         .fn()
