@@ -59,7 +59,7 @@
     "sql.js": "^1.14.1",
     "supertest": "^7.0.0",
     "tailwindcss": "^4.2.4",
-    "ts-jest": "^29.2.5",
+    "ts-jest": "^29.4.10",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
     "tsconfig-paths": "^4.2.0",
