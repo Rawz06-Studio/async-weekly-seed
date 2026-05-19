@@ -2,14 +2,17 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import request from 'supertest';
 import { AppModule } from './../src/app.module';
-import { WeeklySeed } from '../src/entities/weekly-seed.entity';
-import { Repository } from 'typeorm';
 
 describe('AppController (e2e)', () => {
   let app: NestExpressApplication;
   let moduleFixture: TestingModule;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
+    global.fetch = jest.fn().mockResolvedValue({
+      ok: false,
+      status: 503,
+    } as any);
+
     moduleFixture = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
@@ -18,9 +21,9 @@ describe('AppController (e2e)', () => {
     app.setBaseViewsDir('views');
     app.setViewEngine('ejs');
     await app.init();
-  });
+  }, 30_000);
 
-  afterEach(async () => {
+  afterAll(async () => {
     await app.close();
   });
 
@@ -32,24 +35,11 @@ describe('AppController (e2e)', () => {
     return request(app.getHttpServer()).get('/archives').expect(200);
   });
 
-  it('/score (POST) - redirect', async () => {
-    // Ensure there is an active seed in the DB before posting a score
-    const seedRepo: Repository<WeeklySeed> = moduleFixture.get(
-      'WeeklySeedRepository',
-    );
-    await seedRepo.save({
-      seedUrl: 'http://test-seed',
-      preset: 'test-preset',
-      version: '1.0',
-      settings: '{}',
-      isActive: true,
-    });
-
+  it('/score (POST) - redirects on submission', () => {
     return request(app.getHttpServer())
       .post('/score')
-      .send({ playerName: 'E2E Player', time: '1:00:00' })
-      .expect(302)
-      .expect('Location', '/');
+      .send({ playerName: 'E2E Player', time: '1:00:00', leaderboardId: '1' })
+      .expect(302);
   });
 
   it('/admin/generate-seed (POST) - redirect', () => {

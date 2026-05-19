@@ -4,18 +4,18 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { WeeklySeed } from './entities/weekly-seed.entity';
 import { Score } from './entities/score.entity';
 import { PresetQueueItem } from './entities/preset-queue-item.entity';
 import { Leaderboard } from './entities/leaderboard.entity';
+import { SeedModule } from './seed/seed.module';
+import { LeaderboardModule } from './leaderboard/leaderboard.module';
+import { ScoreModule } from './score/score.module';
+import { DiscordModule } from './discord/discord.module';
 
 @Module({
   imports: [
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
+    ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
       useFactory: () => {
         if (process.env.NODE_ENV === 'test') {
@@ -38,13 +38,14 @@ import { Leaderboard } from './entities/leaderboard.entity';
         };
       },
     }),
-    TypeOrmModule.forFeature([WeeklySeed, Score, PresetQueueItem, Leaderboard]),
     ScheduleModule.forRoot(),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, '..', 'public'),
     }),
+    SeedModule,
+    LeaderboardModule,
+    ScoreModule,
+    DiscordModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
