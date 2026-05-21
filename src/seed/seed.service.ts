@@ -49,6 +49,7 @@ export class SeedService implements OnModuleInit {
 
     const leaderboards = await this.leaderboardService.getAll();
     for (const lb of leaderboards) {
+      if (!lb.enabled) continue;
       const current = await this.getCurrentSeedForLeaderboard(lb.id);
       if (!current) {
         this.logger.log(`No active seed for "${lb.name}", generating...`);
@@ -143,11 +144,19 @@ export class SeedService implements OnModuleInit {
   async handleCron() {
     const leaderboards = await this.leaderboardService.getAll();
     for (const lb of leaderboards) {
-      await this.generateNewSeed(lb);
+      if (lb.enabled) {
+        await this.generateNewSeed(lb);
+      } else {
+        await this.archiveCurrentSeed(lb);
+        await this.leaderboardService.clearQueue(lb);
+        this.logger.log(
+          `Leaderboard "${lb.name}" is paused — archived seed and cleared queue`,
+        );
+      }
     }
   }
 
-  async generateNewSeed(leaderboard: Leaderboard) {
+  private async archiveCurrentSeed(leaderboard: Leaderboard): Promise<void> {
     await this.seedRepository
       .createQueryBuilder()
       .update(WeeklySeed)
@@ -157,6 +166,10 @@ export class SeedService implements OnModuleInit {
         active: true,
       })
       .execute();
+  }
+
+  async generateNewSeed(leaderboard: Leaderboard) {
+    await this.archiveCurrentSeed(leaderboard);
 
     const preset = await this.leaderboardService.popNextPreset(leaderboard);
     await this.leaderboardService.replenishQueue(leaderboard);

@@ -21,6 +21,7 @@ describe('SeedService', () => {
   const mockLeaderboard = {
     id: 1,
     name: 'Weekly',
+    enabled: true,
     presetWeights: '{"seed_s9": 100}',
     seeds: [],
     queue: [],
@@ -50,6 +51,7 @@ describe('SeedService', () => {
     getAll: jest.fn().mockResolvedValue([mockLeaderboard]),
     popNextPreset: jest.fn().mockResolvedValue('seed_s9'),
     replenishQueue: jest.fn().mockResolvedValue(undefined),
+    clearQueue: jest.fn().mockResolvedValue(undefined),
     getQueueItems: jest.fn().mockResolvedValue([]),
   };
 

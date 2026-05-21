@@ -10,6 +10,9 @@ export class Leaderboard {
   @Column()
   name!: string;
 
+  @Column({ default: true })
+  enabled!: boolean;
+
   @Column({ type: 'text' })
   presetWeights!: string;
 

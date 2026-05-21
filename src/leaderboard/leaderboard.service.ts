@@ -119,6 +119,13 @@ export class LeaderboardService {
     await this.pushToQueue(leaderboard, 1);
   }
 
+  async clearQueue(leaderboard: Leaderboard): Promise<void> {
+    await this.presetQueueRepository.delete({
+      leaderboard: { id: leaderboard.id },
+    });
+    this.logger.log(`Queue cleared for "${leaderboard.name}"`);
+  }
+
   async fillAllQueues(): Promise<void> {
     const leaderboards = await this.leaderboardRepository.find();
     for (const lb of leaderboards) {
