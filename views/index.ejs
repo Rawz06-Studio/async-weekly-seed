@@ -269,6 +269,7 @@
                                         <th class="pb-3 px-3 text-right">Time</th>
                                         <th class="pb-3 px-3 text-center">VOD</th>
                                         <th class="pb-3 px-3">Comment</th>
+                                        <th class="pb-3 px-3 text-right">Submitted</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -307,6 +308,12 @@
                                             </td>
                                             <td class="py-3 px-3 text-sm italic text-stone-400 dark:text-gray-600">
                                                 <%= score.comment || '—' %>
+                                            </td>
+                                            <td class="py-3 px-3 text-right font-mono text-xs text-stone-400 dark:text-gray-600 whitespace-nowrap">
+                                                <%= new Date(score.createdAt).toLocaleString('en-GB', {
+                                                    timeZone: 'Europe/Paris', day: '2-digit', month: 'short',
+                                                    hour: '2-digit', minute: '2-digit'
+                                                }) %>
                                             </td>
                                         </tr>
                                     <% }) %>
