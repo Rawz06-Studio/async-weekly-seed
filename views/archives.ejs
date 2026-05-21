@@ -66,6 +66,41 @@
         <div class="gold-line max-w-xs mx-auto mb-10"></div>
 
         <% if (archives && archives.length > 0) { %>
+        <%
+            const allPresets = [...new Set(archives.map(s => s.preset.replace('seed_', '')))];
+        %>
+
+        <%/* ── Filters bar ──────────────────────────────────────────── */%>
+        <div class="flex flex-wrap items-center justify-center gap-3 mb-8">
+
+            <%/* Preset filters (only when 2+ presets) */%>
+            <% if (allPresets.length > 1) { %>
+            <div class="flex flex-wrap gap-2">
+                <button id="filter-all" onclick="filterPreset('all')"
+                    class="font-cinzel text-xs uppercase tracking-widest px-4 py-2 rounded-lg border transition-all duration-200">
+                    All
+                </button>
+                <% allPresets.forEach(p => { %>
+                <button id="filter-<%= p %>" onclick="filterPreset('<%= p %>')"
+                    class="font-cinzel text-xs uppercase tracking-widest px-4 py-2 rounded-lg border transition-all duration-200">
+                    <%= p %>
+                </button>
+                <% }) %>
+            </div>
+            <div class="w-px h-5 bg-stone-300 dark:bg-gray-700 self-center hidden sm:block"></div>
+            <% } %>
+
+            <%/* Empty seeds toggle */%>
+            <button id="toggle-empty" onclick="toggleEmpty()"
+                class="flex items-center gap-1.5 font-cinzel text-xs uppercase tracking-widest px-4 py-2 rounded-lg border transition-all duration-200">
+                <svg id="toggle-empty-icon" class="w-3.5 h-3.5 shrink-0" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                </svg>
+                Hide empty
+            </button>
+
+        </div>
+
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             <% archives.forEach(seed => { %>
                 <%
@@ -75,7 +110,7 @@
                     const bl = badgeLight[presetKey] || 'bg-blue-100 text-blue-800 border-blue-300';
                     const bd = badgeDark[presetKey]  || 'dark:bg-blue-900/50 dark:text-blue-300 dark:border-blue-700/50';
                 %>
-                <a href="/archive/<%= seed.id %>"
+                <a href="/archive/<%= seed.id %>" data-preset="<%= presetKey %>" data-count="<%= seed.scores.length %>"
                     class="group block
                            bg-white/80 dark:bg-gray-900/70
                            border border-amber-200 dark:border-amber-800/20
@@ -111,6 +146,13 @@
                 </a>
             <% }) %>
         </div>
+
+        <div id="no-filter-results" class="hidden text-center py-16 font-cinzel">
+            <p class="text-xl tracking-wide text-stone-400 dark:text-gray-600">No archives for this preset.</p>
+        </div>
+
+        <div id="__archives_cfg__" hidden data-presets="<%= allPresets.join(',') %>"></div>
+
         <% } else { %>
         <div class="text-center py-24 font-cinzel">
             <p class="text-xl tracking-wide text-stone-400 dark:text-gray-600">No archives yet.</p>
@@ -118,6 +160,94 @@
         <% } %>
 
     </main>
+
+    <script>
+        const archivesCfg = document.getElementById('__archives_cfg__');
+        const presetList = archivesCfg ? archivesCfg.dataset.presets.split(',').filter(Boolean) : [];
+
+        let activePreset = 'all';
+        let hideEmpty = true;
+
+        function applyFilters() {
+            document.querySelectorAll('[data-preset]').forEach(card => {
+                const presetMatch = activePreset === 'all' || card.dataset.preset === activePreset;
+                const countMatch = !hideEmpty || parseInt(card.dataset.count, 10) > 0;
+                card.classList.toggle('hidden', !presetMatch || !countMatch);
+            });
+            const visible = document.querySelectorAll('[data-preset]:not(.hidden)').length;
+            const noResults = document.getElementById('no-filter-results');
+            if (noResults) noResults.classList.toggle('hidden', visible > 0);
+        }
+
+        function filterPreset(preset) {
+            activePreset = preset;
+            const activeClass = ['bg-amber-500', 'text-gray-900', 'border-amber-500'];
+            const inactiveClass = ['border-amber-300', 'dark:border-amber-800/40', 'text-amber-600', 'dark:text-amber-700'];
+            ['all', ...presetList].forEach(p => {
+                const btn = document.getElementById('filter-' + p);
+                if (!btn) return;
+                const active = p === preset;
+                activeClass.forEach(c => btn.classList.toggle(c, active));
+                inactiveClass.forEach(c => btn.classList.toggle(c, !active));
+            });
+            applyFilters();
+            try { localStorage.setItem('ootAsyncArchiveFilter', preset); } catch (_) {}
+        }
+
+        function toggleEmpty() {
+            hideEmpty = !hideEmpty;
+            const btn = document.getElementById('toggle-empty');
+            const icon = document.getElementById('toggle-empty-icon');
+            if (btn) {
+                btn.classList.toggle('bg-stone-600', hideEmpty);
+                btn.classList.toggle('dark:bg-gray-600', hideEmpty);
+                btn.classList.toggle('text-white', hideEmpty);
+                btn.classList.toggle('border-stone-600', hideEmpty);
+                btn.classList.toggle('dark:border-gray-600', hideEmpty);
+                btn.classList.toggle('border-stone-300', !hideEmpty);
+                btn.classList.toggle('dark:border-gray-700', !hideEmpty);
+                btn.classList.toggle('text-stone-500', !hideEmpty);
+                btn.classList.toggle('dark:text-gray-500', !hideEmpty);
+            }
+            if (icon) icon.classList.toggle('opacity-0', !hideEmpty);
+            applyFilters();
+            try { localStorage.setItem('ootAsyncArchiveHideEmpty', hideEmpty ? '1' : '0'); } catch (_) {}
+        }
+
+        // Init preset filter
+        let storedPreset = null;
+        try { storedPreset = localStorage.getItem('ootAsyncArchiveFilter'); } catch (_) {}
+        if (storedPreset && storedPreset !== 'all' && !presetList.includes(storedPreset)) {
+            try { localStorage.removeItem('ootAsyncArchiveFilter'); } catch (_) {}
+            storedPreset = null;
+        }
+
+        // Init empty toggle
+        let storedHide = null;
+        try { storedHide = localStorage.getItem('ootAsyncArchiveHideEmpty'); } catch (_) {}
+        hideEmpty = storedHide === null ? true : storedHide === '1';
+
+        // Apply initial state without triggering localStorage writes
+        activePreset = storedPreset || 'all';
+        filterPreset(activePreset);
+
+        // Sync toggle button visual state
+        const toggleBtn = document.getElementById('toggle-empty');
+        const toggleIcon = document.getElementById('toggle-empty-icon');
+        if (toggleBtn) {
+            toggleBtn.classList.toggle('bg-stone-600', hideEmpty);
+            toggleBtn.classList.toggle('dark:bg-gray-600', hideEmpty);
+            toggleBtn.classList.toggle('text-white', hideEmpty);
+            toggleBtn.classList.toggle('border-stone-600', hideEmpty);
+            toggleBtn.classList.toggle('dark:border-gray-600', hideEmpty);
+            toggleBtn.classList.toggle('border-stone-300', !hideEmpty);
+            toggleBtn.classList.toggle('dark:border-gray-700', !hideEmpty);
+            toggleBtn.classList.toggle('text-stone-500', !hideEmpty);
+            toggleBtn.classList.toggle('dark:text-gray-500', !hideEmpty);
+        }
+        if (toggleIcon) toggleIcon.classList.toggle('opacity-0', !hideEmpty);
+        applyFilters();
+    </script>
 
     <footer class="mt-4 pb-8 text-center">
         <div class="gold-line max-w-xs mx-auto mb-6"></div>
