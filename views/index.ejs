@@ -215,6 +215,9 @@
                                 <span class="font-sans font-normal normal-case tracking-normal text-xs ml-2 text-stone-400 dark:text-gray-600">
                                     (<%= lb.seed.scores.length %> participant<%= lb.seed.scores.length !== 1 ? 's' : '' %>)
                                 </span>
+                                <span class="group-open:hidden font-sans font-normal normal-case tracking-normal text-xs ml-1 text-stone-400 dark:text-gray-600 italic">
+                                    — open to see who's in
+                                </span>
                                 <% } %>
                             </h2>
                             <span class="text-amber-500 dark:text-amber-600 transition-transform duration-300 group-open:rotate-180">
@@ -227,7 +230,7 @@
                         <% if (lb.seed.scores && lb.seed.scores.length > 0) { %>
 
                         <%/* ── Mode toggle ───────────────────────────── */%>
-                        <div class="mt-5 mb-4 flex gap-2">
+                        <div class="mt-5 mb-3 flex gap-2">
                             <button id="btn-masked-<%= lb.id %>" onclick="standingsMode('<%= lb.id %>', 'masked')"
                                 class="font-cinzel text-xs uppercase tracking-widest px-4 py-2 rounded-lg border transition-all duration-200
                                        bg-amber-500 text-gray-900 border-amber-500">
@@ -240,6 +243,9 @@
                                 Full standings
                             </button>
                         </div>
+                        <p id="standings-time-hint-<%= lb.id %>" class="mb-4 text-xs text-stone-400 dark:text-gray-500 italic">
+                            Times are hidden — switch to <span class="font-semibold not-italic">Full standings</span> to reveal them.
+                        </p>
 
                         <%/* ── Masked view ───────────────────────────── */%>
                         <div id="standings-masked-<%= lb.id %>" class="overflow-x-auto">
@@ -372,12 +378,16 @@
                 btn.classList.toggle('text-amber-600', !active);
                 btn.classList.toggle('dark:text-amber-700', !active);
             });
-            try { sessionStorage.setItem('ootAsyncActiveLb', String(id)); } catch (_) {}
+            try { localStorage.setItem('ootAsyncActiveLb', String(id)); } catch (_) {}
         }
 
         if (tabIds.length > 0) {
             let storedId = null;
-            try { storedId = parseInt(sessionStorage.getItem('ootAsyncActiveLb') || '', 10) || null; } catch (_) {}
+            try { storedId = parseInt(localStorage.getItem('ootAsyncActiveLb') || '', 10) || null; } catch (_) {}
+            if (storedId && !tabIds.includes(storedId)) {
+                try { localStorage.removeItem('ootAsyncActiveLb'); } catch (_) {}
+                storedId = null;
+            }
             const initialId = (serverActiveLbId && tabIds.includes(serverActiveLbId)) ? serverActiveLbId
                             : (storedId && tabIds.includes(storedId)) ? storedId
                             : tabIds[0];
@@ -400,6 +410,8 @@
                 btnMasked.classList.toggle(c, isFull);
                 btnFull.classList.toggle(c, !isFull);
             });
+            const hint = document.getElementById('standings-time-hint-' + lbId);
+            if (hint) hint.classList.toggle('hidden', isFull);
         }
 
         (function () {
