@@ -11,6 +11,7 @@ import { SeedModule } from './seed/seed.module';
 import { LeaderboardModule } from './leaderboard/leaderboard.module';
 import { ScoreModule } from './score/score.module';
 import { DiscordModule } from './discord/discord.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -46,6 +47,7 @@ import { DiscordModule } from './discord/discord.module';
     LeaderboardModule,
     ScoreModule,
     DiscordModule,
+    AdminModule,
   ],
 })
 export class AppModule {}

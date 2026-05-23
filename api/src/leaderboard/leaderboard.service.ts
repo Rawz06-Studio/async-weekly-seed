@@ -133,7 +133,51 @@ export class LeaderboardService {
     }
   }
 
-  private async fillQueue(leaderboard: Leaderboard): Promise<void> {
+  async createLeaderboard(name: string, presetWeights?: string): Promise<Leaderboard> {
+    const weights = presetWeights ?? DEFAULT_PRESET_WEIGHTS;
+    const lb = await this.leaderboardRepository.save(
+      this.leaderboardRepository.create({ name, presetWeights: weights }),
+    );
+    await this.fillQueue(lb);
+    return lb;
+  }
+
+  async updateLeaderboard(
+    id: number,
+    data: { name?: string; enabled?: boolean; presetWeights?: string },
+  ): Promise<Leaderboard> {
+    await this.leaderboardRepository.update(id, data);
+    return this.leaderboardRepository.findOneOrFail({ where: { id } });
+  }
+
+  async deleteLeaderboard(id: number): Promise<void> {
+    const lb = await this.leaderboardRepository.findOneOrFail({ where: { id } });
+    await this.clearQueue(lb);
+    // Orphan seeds rather than cascade-delete scores
+    await this.seedRepository
+      .createQueryBuilder()
+      .update()
+      .set({ leaderboard: null })
+      .where('"leaderboardId" = :id', { id })
+      .execute();
+    await this.leaderboardRepository.delete(id);
+  }
+
+  async regenerateQueue(leaderboardId: number): Promise<void> {
+    const lb = await this.leaderboardRepository.findOneOrFail({ where: { id: leaderboardId } });
+    await this.clearQueue(lb);
+    await this.fillQueue(lb);
+  }
+
+  async deleteQueueItem(itemId: number): Promise<void> {
+    await this.presetQueueRepository.delete(itemId);
+  }
+
+  async findById(id: number): Promise<Leaderboard | null> {
+    return this.leaderboardRepository.findOne({ where: { id } });
+  }
+
+  async fillQueue(leaderboard: Leaderboard): Promise<void> {
     const targetSize = this.configService.get<number>('PRESET_QUEUE_SIZE', 5);
     const currentCount = await this.presetQueueRepository.count({
       where: { leaderboard: { id: leaderboard.id } },

@@ -55,4 +55,25 @@ export class ScoreService {
 
     return this.scoreRepository.save(newScore);
   }
+
+  async getAllScoresAdmin(): Promise<Score[]> {
+    return this.scoreRepository.find({
+      relations: ['seed', 'seed.leaderboard'],
+      order: { createdAt: 'DESC' },
+      take: 200,
+    });
+  }
+
+  async deleteScore(id: number): Promise<void> {
+    await this.scoreRepository.delete(id);
+  }
+
+  async updateScore(
+    id: number,
+    data: { time?: number | null; comment?: string | null; vodUrl?: string | null },
+  ): Promise<Score> {
+    const score = await this.scoreRepository.findOneOrFail({ where: { id } });
+    Object.assign(score, data);
+    return this.scoreRepository.save(score);
+  }
 }

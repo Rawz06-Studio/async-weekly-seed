@@ -9,5 +9,6 @@ import { SeedModule } from '../seed/seed.module';
   imports: [TypeOrmModule.forFeature([Score]), SeedModule],
   providers: [ScoreService],
   controllers: [ScoreController],
+  exports: [ScoreService],
 })
 export class ScoreModule {}
