@@ -1,57 +1,38 @@
-import {
-  Controller,
-  Get,
-  Render,
-  Redirect,
-  Param,
-  Query,
-  Post,
-} from '@nestjs/common';
+import { Controller, Get, Param, Post, HttpCode, HttpStatus, NotFoundException } from '@nestjs/common';
 import { SeedService } from './seed.service';
-import { secondsToTimeString } from '../utils/time';
 
 @Controller()
 export class SeedController {
   constructor(private readonly seedService: SeedService) {}
 
-  @Get()
-  @Render('index')
-  async getHome(@Query('error') error?: string, @Query('lbId') lbId?: string) {
-    const leaderboards =
-      await this.seedService.getLeaderboardsWithActiveSeeds();
+  @Get('leaderboards/active')
+  async getHome() {
+    const leaderboards = await this.seedService.getLeaderboardsWithActiveSeeds();
     const nextSeedDate = this.seedService.getNextSeedDate();
-    return {
-      leaderboards,
-      nextSeedDate,
-      formatTime: secondsToTimeString,
-      error,
-      activeLbId: lbId ? parseInt(lbId, 10) : null,
-    };
+    return { leaderboards, nextSeedDate };
   }
 
   @Get('archives')
-  @Render('archives')
   async getArchives() {
-    const archives = await this.seedService.getArchives();
-    return { archives };
+    return this.seedService.getArchives();
   }
 
-  @Get('archive/:id')
-  @Render('archive-detail')
+  @Get('archives/:id')
   async getArchive(@Param('id') id: number) {
     const seed = await this.seedService.getArchiveById(id);
-    return { seed, formatTime: secondsToTimeString };
+    if (!seed) throw new NotFoundException('Archive not found');
+    return seed;
   }
 
   @Get('upcoming')
-  @Render('upcoming')
   async getUpcoming() {
     return this.seedService.getUpcomingPresets();
   }
 
   @Post('admin/generate-seed')
-  @Redirect('/')
+  @HttpCode(HttpStatus.OK)
   async forceGenerateSeed() {
     await this.seedService.handleCron();
+    return { success: true };
   }
 }

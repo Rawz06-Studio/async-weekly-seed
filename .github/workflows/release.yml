@@ -21,10 +21,20 @@ jobs:
       node_version: '24'
     secrets: inherit
 
-  docker:
+  docker-api:
     needs: release
     uses: RawZ06-Studio/.github/.github/workflows/docker-build-push.yml@main
     with:
-      image_name: async-weekly-seed
+      image_name: async-weekly-seed-api
+      dockerfile: Dockerfile.api
       dokploy_app_id: 0AERb2Ga212nnBVmepO7I
+    secrets: inherit
+
+  docker-web:
+    needs: release
+    uses: RawZ06-Studio/.github/.github/workflows/docker-build-push.yml@main
+    with:
+      image_name: async-weekly-seed-web
+      dockerfile: Dockerfile.web
+      dokploy_app_id: REPLACE_WITH_WEB_APP_ID
     secrets: inherit

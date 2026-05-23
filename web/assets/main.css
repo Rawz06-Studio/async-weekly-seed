@@ -1,0 +1,26 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&display=swap');
+@import "tailwindcss";
+
+/* Tailwind v4: custom font via @theme → génère automatiquement la classe `font-cinzel` */
+
+:root {
+  --body-bg: #faf7f0;
+  --body-glow: radial-gradient(ellipse 80% 40% at 50% -5%, #fef3c7 0%, transparent 70%);
+  --gold-stop: rgba(180, 83, 9, 0.45);
+}
+
+.dark {
+  --body-bg: #0d0e1a;
+  --body-glow: radial-gradient(ellipse 80% 40% at 50% -5%, #1e1040 0%, transparent 70%);
+  --gold-stop: rgba(217, 119, 6, 0.5);
+}
+
+body {
+  background-color: var(--body-bg);
+  background-image: var(--body-glow);
+}
+
+.gold-line {
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--gold-stop), transparent);
+}

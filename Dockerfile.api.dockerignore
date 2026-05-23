@@ -1,0 +1,10 @@
+node_modules
+dist
+coverage
+.git
+.env
+web/node_modules
+web/src
+web/.nuxt
+web/.output
+*.log

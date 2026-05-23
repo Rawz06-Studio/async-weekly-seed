@@ -1,34 +1,24 @@
-import { Controller, Post, Body, Res } from '@nestjs/common';
-import type { Response } from 'express';
+import { Controller, Post, Body, BadRequestException, HttpCode, HttpStatus } from '@nestjs/common';
 import { ScoreService } from './score.service';
 
-@Controller()
+@Controller('scores')
 export class ScoreController {
   constructor(private readonly scoreService: ScoreService) {}
 
-  @Post('score')
+  @Post()
+  @HttpCode(HttpStatus.CREATED)
   async postScore(
     @Body('playerName') playerName: string,
     @Body('time') time: string,
     @Body('comment') comment: string,
     @Body('vodUrl') vodUrl: string,
-    @Body('leaderboardId') leaderboardId: string,
-    @Res() res: Response,
+    @Body('leaderboardId') leaderboardId: string | number,
   ) {
-    const lbId = parseInt(leaderboardId, 10);
-    if (!playerName) {
-      return res.redirect(
-        `/?error=${encodeURIComponent('Player name is required')}&lbId=${lbId}`,
-      );
+    if (!playerName?.trim()) {
+      throw new BadRequestException('Player name is required');
     }
-    try {
-      await this.scoreService.addScore(playerName, time, comment, vodUrl, lbId);
-      return res.redirect(`/?lbId=${lbId}`);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An error occurred';
-      return res.redirect(
-        `/?error=${encodeURIComponent(message)}&lbId=${lbId}`,
-      );
-    }
+    const lbId = Number(leaderboardId);
+    await this.scoreService.addScore(playerName, time, comment, vodUrl, lbId);
+    return { success: true };
   }
 }

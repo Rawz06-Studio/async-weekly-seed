@@ -1,15 +1,12 @@
-import { Controller, Get, Render } from '@nestjs/common';
+import { Controller, Get } from '@nestjs/common';
 import { LeaderboardService } from './leaderboard.service';
 
-@Controller()
+@Controller('rulesets')
 export class LeaderboardController {
   constructor(private readonly leaderboardService: LeaderboardService) {}
 
-  @Get('rulesets')
-  @Render('rulesets')
+  @Get()
   async getRulesets() {
-    return {
-      leaderboards: await this.leaderboardService.getLeaderboardsWithRulesets(),
-    };
+    return this.leaderboardService.getLeaderboardsWithRulesets();
   }
 }
