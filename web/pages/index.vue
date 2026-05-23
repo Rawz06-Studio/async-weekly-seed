@@ -48,7 +48,7 @@ function switchTab(id: number) {
 }
 
 // ── Submit form ───────────────────────────────────────────────────────────────
-const form = reactive({ playerName: '', time: '', vodUrl: '', comment: '' })
+const form = reactive({ playerName: '', time: '', vodUrl: '', comment: '', website: '' })
 const submitting = ref(false)
 const submitError = ref<string | null>(null)
 const submitSuccess = ref(false)
@@ -212,6 +212,16 @@ function rankLabel(scores: Score[], index: number) {
               class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3"
               @submit.prevent="submitScore(lb.id)"
             >
+              <!-- Honeypot: invisible for humans, bots will fill it -->
+              <input
+                v-model="form.website"
+                type="text"
+                name="website"
+                tabindex="-1"
+                autocomplete="off"
+                aria-hidden="true"
+                style="position:absolute;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;pointer-events:none"
+              >
               <input
                 v-model="form.playerName"
                 type="text"

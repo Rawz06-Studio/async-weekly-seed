@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { WeeklySeed } from './entities/weekly-seed.entity';
 import { Score } from './entities/score.entity';
 import { PresetQueueItem } from './entities/preset-queue-item.entity';
@@ -35,6 +36,10 @@ import { DiscordModule } from './discord/discord.module';
           synchronize: true,
         };
       },
+    }),
+    ThrottlerModule.forRoot({
+      skipIf: () => process.env.THROTTLE_DISABLED === 'true',
+      throttlers: [{ ttl: 3600_000, limit: 10 }],
     }),
     ScheduleModule.forRoot(),
     SeedModule,
