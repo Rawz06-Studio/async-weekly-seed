@@ -24,133 +24,148 @@ function presetName(preset: string) {
   return preset.replace('seed_', '').toUpperCase()
 }
 
-let rank = 0
-function getRank(score: Score): number | null {
-  if (score.time === null) return null
-  return ++rank
-}
+const scoreColumns = [
+  { accessorKey: 'rank', header: '#' },
+  { accessorKey: 'playerName', header: 'Player' },
+  { accessorKey: 'time', header: 'Time' },
+  { accessorKey: 'vod', header: 'VOD' },
+  { accessorKey: 'comment', header: 'Comment' },
+  { accessorKey: 'submitted', header: 'Submitted' },
+]
 
-// Reset rank reactively
-watchEffect(() => { if (seed.value) rank = 0 })
+const scoreRows = computed(() =>
+  seed.value?.scores.map((s, i) => ({
+    ...s,
+    rank: s.time === null ? null : i + 1,
+    _rankIndex: i,
+  })) ?? []
+)
 </script>
 
 <template>
   <main class="container mx-auto mt-10 px-4 pb-16">
-    <NuxtLink
+    <UButton
       to="/archives"
-      class="inline-flex items-center gap-2 font-cinzel text-xs tracking-widest uppercase text-stone-400 dark:text-gray-500 hover:text-amber-600 dark:hover:text-amber-400 transition-colors duration-200 mb-8"
-    >
-      <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-      </svg>
-      Archives
-    </NuxtLink>
+      variant="ghost"
+      color="neutral"
+      icon="i-heroicons-arrow-left"
+      label="Archives"
+      size="xs"
+      class="font-cinzel tracking-widest uppercase mb-8"
+    />
 
-    <div v-if="seed" class="bg-white/80 dark:bg-gray-900/70 border border-amber-200 dark:border-amber-800/30 rounded-xl shadow-xl shadow-amber-100/50 dark:shadow-black/50 overflow-hidden">
-      <div class="px-8 pt-10 pb-8">
-        <h1 class="font-cinzel text-4xl font-bold text-center tracking-wider mb-8 text-amber-700 dark:text-amber-400">
-          {{ presetName(seed.preset) }} Archive
-        </h1>
-        <div class="flex flex-wrap justify-center items-center gap-10">
-          <div class="text-center">
-            <span class="block text-xs tracking-widest uppercase mb-1 text-stone-400 dark:text-gray-500">Preset</span>
-            <span class="font-cinzel text-2xl font-semibold text-amber-600 dark:text-amber-300">
-              {{ presetName(seed.preset) }}
-            </span>
+    <div v-if="seed">
+      <UCard :ui="{ body: 'p-0' }">
+        <!-- Header -->
+        <div class="px-8 pt-10 pb-8">
+          <h1 class="font-cinzel text-4xl font-bold text-center tracking-wider mb-8 text-primary">
+            {{ presetName(seed.preset) }} Archive
+          </h1>
+          <div class="flex flex-wrap justify-center items-center gap-10">
+            <div class="text-center">
+              <span class="block text-xs tracking-widest uppercase mb-1 text-neutral-400">Preset</span>
+              <UBadge
+                :label="presetName(seed.preset)"
+                variant="subtle"
+                size="lg"
+                :class="presetColors(seed.preset).badge"
+                class="font-cinzel tracking-widest uppercase"
+              />
+            </div>
+            <div class="text-center">
+              <span class="block text-xs tracking-widest uppercase mb-1 text-neutral-400">Version</span>
+              <span class="font-cinzel text-2xl font-semibold">{{ seed.version }}</span>
+            </div>
+            <div class="text-center">
+              <span class="block text-xs tracking-widest uppercase mb-1 text-neutral-400">Played</span>
+              <span class="font-cinzel text-2xl font-semibold">
+                {{ formatDate(seed.createdAt, { day: 'numeric', month: 'short', year: 'numeric' }) }}
+              </span>
+            </div>
+            <UButton
+              :to="seed.seedUrl"
+              target="_blank"
+              label="View Seed"
+              color="primary"
+              variant="solid"
+              icon="i-heroicons-arrow-top-right-on-square"
+              class="font-cinzel uppercase tracking-wider"
+            />
           </div>
-          <div class="text-center">
-            <span class="block text-xs tracking-widest uppercase mb-1 text-stone-400 dark:text-gray-500">Version</span>
-            <span class="font-cinzel text-2xl font-semibold text-gray-700 dark:text-gray-200">
-              {{ seed.version }}
+        </div>
+
+        <USeparator class="mx-8" />
+
+        <!-- Standings -->
+        <div class="px-8 py-8">
+          <p class="font-cinzel text-sm font-semibold tracking-widest uppercase mb-5 text-primary">
+            Final Standings
+            <span v-if="seed.scores.length" class="font-sans font-normal normal-case tracking-normal text-xs ml-2 text-neutral-400">
+              ({{ seed.scores.length }} participant{{ seed.scores.length !== 1 ? 's' : '' }})
             </span>
-          </div>
-          <div class="text-center">
-            <span class="block text-xs tracking-widest uppercase mb-1 text-stone-400 dark:text-gray-500">Played</span>
-            <span class="font-cinzel text-2xl font-semibold text-gray-700 dark:text-gray-200">
-              {{ formatDate(seed.createdAt, { day: 'numeric', month: 'short', year: 'numeric' }) }}
-            </span>
-          </div>
-          <a
-            :href="seed.seedUrl"
-            target="_blank"
-            class="font-cinzel uppercase tracking-wider text-sm font-bold bg-amber-500 hover:bg-amber-400 active:bg-amber-600 text-gray-900 px-8 py-3 rounded-lg shadow-md transition-all duration-200 hover:-translate-y-px"
+          </p>
+
+          <UTable
+            v-if="seed.scores.length"
+            :data="scoreRows"
+            :columns="scoreColumns"
+            :ui="{ thead: 'font-cinzel text-xs tracking-widest uppercase' }"
           >
-            View Seed
-          </a>
-        </div>
-      </div>
-
-      <div class="gold-line mx-8" />
-
-      <div class="px-8 py-8">
-        <h2 class="font-cinzel text-sm font-semibold tracking-widest uppercase mb-5 text-amber-700 dark:text-amber-300">
-          Final Standings
-          <span v-if="seed.scores.length > 0" class="font-sans font-normal normal-case tracking-normal text-xs ml-2 text-stone-400 dark:text-gray-600">
-            ({{ seed.scores.length }} participant{{ seed.scores.length !== 1 ? 's' : '' }})
-          </span>
-        </h2>
-
-        <div v-if="seed.scores.length > 0" class="overflow-x-auto">
-          <table class="w-full text-left">
-            <thead>
-              <tr class="font-cinzel text-xs tracking-widest uppercase border-b border-amber-200 dark:border-amber-800/40 text-stone-400 dark:text-gray-500">
-                <th class="pb-3 px-3 w-10">#</th>
-                <th class="pb-3 px-3">Player</th>
-                <th class="pb-3 px-3 text-right">Time</th>
-                <th class="pb-3 px-3 text-center">VOD</th>
-                <th class="pb-3 px-3">Comment</th>
-                <th class="pb-3 px-3 text-right">Submitted</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr
-                v-for="(score, i) in seed.scores"
-                :key="score.id"
-                class="border-b border-stone-100 dark:border-gray-800/60 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-colors duration-150"
+            <template #rank-cell="{ row }">
+              <span
+                class="font-cinzel text-sm font-semibold"
+                :class="row.original.time === null ? 'text-neutral-300 dark:text-neutral-700'
+                  : row.original._rankIndex === 0 ? 'text-amber-500'
+                  : row.original._rankIndex === 1 ? 'text-neutral-400'
+                  : row.original._rankIndex === 2 ? 'text-amber-700'
+                  : 'text-neutral-500'"
               >
-                <td
-                  class="py-3 px-3 font-cinzel text-sm font-semibold"
-                  :class="score.time === null ? 'text-stone-300 dark:text-gray-700'
-                    : i === 0 ? 'text-amber-500 dark:text-amber-400'
-                    : i === 1 ? 'text-stone-400 dark:text-gray-400'
-                    : i === 2 ? 'text-amber-700 dark:text-amber-700'
-                    : 'text-stone-400 dark:text-gray-600'"
-                >
-                  {{ score.time === null ? '—' : i + 1 }}
-                </td>
-                <td class="py-3 px-3 font-semibold text-gray-800 dark:text-gray-100">{{ score.playerName }}</td>
-                <td
-                  class="py-3 px-3 text-right font-mono text-sm"
-                  :class="score.time === null ? 'text-red-500 dark:text-red-400 italic' : 'text-amber-600 dark:text-amber-300'"
-                >
-                  {{ formatTime(score.time) }}
-                </td>
-                <td class="py-3 px-3 text-center">
-                  <a
-                    v-if="score.vodUrl"
-                    :href="score.vodUrl"
-                    target="_blank"
-                    class="text-amber-500 dark:text-amber-700 hover:text-amber-600 dark:hover:text-amber-400 transition-colors duration-150 inline-block"
-                  >
-                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M10 15l5.19-3L10 9v6m11.56-7.83c.13.47.22 1.1.28 1.9.07.8.1 1.49.1 2.09L22 12c0 .61 0 1.3-.1 2.1-.06.8-.15 1.43-.28 1.9-.13.47-.45.85-.94 1.14-.49.28-1.23.42-2.22.42-1 0-1.83-.02-2.5-.07-.66-.04-1.3-.1-1.92-.16-.62-.06-1.12-.12-1.5-.18-.38-.06-.8-.1-1.26-.1l-1.28.1c-.46 0-.88.04-1.26.1-.38.06-.88.12-1.5.18-.62.06-1.26.12-1.92.16-.66.05-1.5.07-2.5.07-.99 0-1.73-.14-2.22-.42-.49-.29-.81-.67-.94-1.14-.13-.47-.22-1.1-.28-1.9-.07-.8-.1-1.49-.1-2.09L2 12c0-.61 0-1.3.1-2.1.06-.8.15-1.43.28-1.9.13-.47.45-.85.94-1.14.49-.28 1.23-.42 2.22-.42 1 0 1.83.02 2.5.07.66.04 1.3.1 1.92.16.62.06 1.12.12 1.5.18.38.06.8.1 1.26.1l1.28-.1c.46 0 .88-.04 1.26-.1.38-.06.88-.12 1.5-.18.62-.06 1.26-.12 1.92-.16.66-.05 1.5-.07 2.5-.07.99 0 1.73.14 2.22.42.49.29.81.67.94 1.14z" />
-                    </svg>
-                  </a>
-                  <span v-else class="text-stone-200 dark:text-gray-700">—</span>
-                </td>
-                <td class="py-3 px-3 text-sm italic text-stone-400 dark:text-gray-600">{{ score.comment || '—' }}</td>
-                <td class="py-3 px-3 text-right font-mono text-xs text-stone-400 dark:text-gray-600 whitespace-nowrap">
-                  {{ formatDate(score.createdAt, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) }}
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+                {{ row.original.rank ?? '—' }}
+              </span>
+            </template>
 
-        <p v-else class="text-center py-10 font-cinzel tracking-wide italic text-stone-400 dark:text-gray-600">
-          No times recorded for this seed.
-        </p>
-      </div>
+            <template #playerName-cell="{ row }">
+              <span class="font-semibold">{{ row.original.playerName }}</span>
+            </template>
+
+            <template #time-cell="{ row }">
+              <span
+                class="font-mono text-sm"
+                :class="row.original.time === null ? 'text-red-500 italic' : 'text-primary'"
+              >
+                {{ formatTime(row.original.time) }}
+              </span>
+            </template>
+
+            <template #vod-cell="{ row }">
+              <UButton
+                v-if="row.original.vodUrl"
+                :to="row.original.vodUrl"
+                target="_blank"
+                icon="i-heroicons-video-camera"
+                color="primary"
+                variant="ghost"
+                size="xs"
+              />
+              <span v-else class="text-neutral-300 dark:text-neutral-700">—</span>
+            </template>
+
+            <template #comment-cell="{ row }">
+              <span class="text-sm italic text-neutral-400">{{ row.original.comment || '—' }}</span>
+            </template>
+
+            <template #submitted-cell="{ row }">
+              <span class="font-mono text-xs text-neutral-400 whitespace-nowrap">
+                {{ formatDate(row.original.createdAt, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' }) }}
+              </span>
+            </template>
+          </UTable>
+
+          <p v-else class="text-center py-10 font-cinzel tracking-wide italic text-neutral-400 dark:text-neutral-600">
+            No times recorded for this seed.
+          </p>
+        </div>
+      </UCard>
     </div>
   </main>
 </template>

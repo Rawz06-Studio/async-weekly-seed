@@ -1,0 +1,1 @@
+import{s as e,O as t}from"./40MARBY7.js";import{u as i}from"./CjRZXrdV.js";import"./BJ2ClxiI.js";const d=e(o=>{if(o.path==="/admin/login")return;if(!i("admin_token").value)return t("/admin/login")});export{d as default};

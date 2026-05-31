@@ -1,0 +1,1 @@
+function o(t){if(t===null)return"Forfeit";const r=Math.floor(t/3600),a=Math.floor(t%3600/60),n=t%60;return`${r}:${String(a).padStart(2,"0")}:${String(n).padStart(2,"0")}`}function e(t,r={}){return new Date(t).toLocaleString("en-GB",{timeZone:"Europe/Paris",...r})}export{o as a,e as f};
