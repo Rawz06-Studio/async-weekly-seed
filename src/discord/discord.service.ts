@@ -6,6 +6,8 @@ const PRESET_COLORS: Record<string, number> = {
   seed_tot: 0x7c3aed,
   seed_mixed: 0x059669,
   seed_rsl: 0xdc2626,
+  seed_franco_easy: 0x22c55e,
+  seed_franco_hard: 0xef4444,
 };
 
 @Injectable()

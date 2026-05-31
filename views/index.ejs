@@ -83,7 +83,7 @@
         <div class="flex gap-2 mb-6">
             <% leaderboards.forEach(lb => { %>
             <button id="tab-btn-<%= lb.id %>" onclick="switchTab(<%= lb.id %>)"
-                class="font-cinzel text-xs uppercase tracking-widest px-5 py-2 rounded-lg border transition-all duration-200">
+                class="font-cinzel text-xs uppercase tracking-widest px-5 py-2 rounded-lg border transition-all duration-200 text-amber-600 dark:text-amber-500 border-amber-300 dark:border-amber-700/40">
                 <%= lb.name %>
             </button>
             <% }) %>
@@ -202,6 +202,36 @@
                 </div>
 
                 <div class="gold-line mx-8"></div>
+
+                <%/* ── Franco options ──────────────────────────────── */%>
+                <% if (lb.seed.francoOptions) { %>
+                <% let francoOpts = []; try { francoOpts = JSON.parse(lb.seed.francoOptions); } catch(e) {} %>
+                <% if (francoOpts.length > 0) { %>
+                <% const _isHard = lb.seed.preset === 'seed_franco_hard'; %>
+                <div class="px-8 py-8">
+                    <h2 class="font-cinzel text-sm font-semibold tracking-widest uppercase mb-5 <%= _isHard ? 'text-orange-600 dark:text-orange-400' : 'text-violet-600 dark:text-violet-400' %>">
+                        Francophone Tournament — Drawn Options
+                    </h2>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+                        <% francoOpts.forEach(opt => { %>
+                        <div class="rounded-lg border p-4 <%= _isHard ? 'border-orange-200 dark:border-orange-800/40 bg-orange-50/50 dark:bg-orange-900/10' : 'border-violet-200 dark:border-violet-800/40 bg-violet-50/50 dark:bg-violet-900/10' %>">
+                            <p class="font-cinzel text-sm font-semibold mb-1 <%= _isHard ? 'text-orange-700 dark:text-orange-300' : 'text-violet-700 dark:text-violet-300' %>"><%= opt.label %></p>
+                            <p class="text-sm text-stone-500 dark:text-gray-400 mb-3"><%= opt.description %></p>
+                            <div class="text-xs font-mono space-y-0.5">
+                                <% Object.entries(opt.settingsToApply).forEach(([k, v]) => { %>
+                                <div>
+                                    <span class="text-stone-400 dark:text-gray-600"><%= k %>:</span>
+                                    <span class="ml-1 <%= _isHard ? 'text-orange-600 dark:text-orange-400' : 'text-violet-600 dark:text-violet-400' %>"><%= JSON.stringify(v) %></span>
+                                </div>
+                                <% }) %>
+                            </div>
+                        </div>
+                        <% }) %>
+                    </div>
+                </div>
+                <div class="gold-line mx-8"></div>
+                <% } %>
+                <% } %>
 
                 <%/* ── Standings ───────────────────────────────────── */%>
                 <div class="px-8 py-8">

@@ -26,6 +26,9 @@ export class WeeklySeed {
   @Column({ type: 'text', nullable: true })
   settings!: string;
 
+  @Column({ type: 'text', nullable: true })
+  francoOptions!: string | null;
+
   @CreateDateColumn()
   createdAt!: Date;
 

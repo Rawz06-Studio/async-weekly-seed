@@ -15,6 +15,22 @@ interface SeedApiResponse {
   usedSettings: any;
 }
 
+interface FrancoApiOption {
+  label: string;
+  description: string;
+  settingsToApply: Record<string, unknown>;
+  [key: string]: unknown;
+}
+
+interface FrancoApiResponse {
+  seed: {
+    seedUrl: string;
+    version: string;
+    usedSettings: any;
+  };
+  options: FrancoApiOption[];
+}
+
 @Injectable()
 export class SeedService implements OnModuleInit {
   private readonly logger = new Logger(SeedService.name);
@@ -161,37 +177,88 @@ export class SeedService implements OnModuleInit {
     const preset = await this.leaderboardService.popNextPreset(leaderboard);
     await this.leaderboardService.replenishQueue(leaderboard);
 
-    const apiUrl = this.configService.get<string>('SEED_API_URL');
+    const apiUrl = this.configService.get<string>('SEED_API_URL', '');
     try {
       this.logger.log(
         `Generating seed for "${leaderboard.name}" — preset: ${preset}`,
       );
-      const response = await fetch(`${apiUrl}/${preset}`);
-      if (!response.ok) {
-        throw new Error(`API responded with status: ${response.status}`);
+      if (preset.startsWith('seed_franco_')) {
+        await this.generateFrancoSeed(leaderboard, preset, apiUrl);
+      } else {
+        await this.generateRegularSeed(leaderboard, preset, apiUrl);
       }
-      const data = (await response.json()) as SeedApiResponse;
-      const newSeed = this.seedRepository.create({
-        seedUrl: data.seedUrl,
-        preset,
-        version: data.version,
-        settings: JSON.stringify(data.usedSettings),
-        isActive: true,
-        leaderboard,
-      });
-      await this.seedRepository.save(newSeed);
-      this.logger.log(
-        `New seed generated for "${leaderboard.name}": ${data.seedUrl}`,
-      );
-      void this.discordService.notifySeedGenerated(
-        leaderboard.name,
-        preset,
-        this.getNextSeedDate(),
-      );
     } catch (error) {
       this.logger.error(
         `Failed to generate seed for "${leaderboard.name}": ${error instanceof Error ? error.message : String(error)}`,
       );
     }
+  }
+
+  private async generateRegularSeed(
+    leaderboard: Leaderboard,
+    preset: string,
+    apiUrl: string,
+  ) {
+    const response = await fetch(`${apiUrl}/${preset}`);
+    if (!response.ok)
+      throw new Error(`API responded with status: ${response.status}`);
+    const data = (await response.json()) as SeedApiResponse;
+    const newSeed = this.seedRepository.create({
+      seedUrl: data.seedUrl,
+      preset,
+      version: data.version,
+      settings: JSON.stringify(data.usedSettings),
+      francoOptions: null,
+      isActive: true,
+      leaderboard,
+    });
+    await this.seedRepository.save(newSeed);
+    this.logger.log(
+      `New seed generated for "${leaderboard.name}": ${data.seedUrl}`,
+    );
+    void this.discordService.notifySeedGenerated(
+      leaderboard.name,
+      preset,
+      this.getNextSeedDate(),
+    );
+  }
+
+  private async generateFrancoSeed(
+    leaderboard: Leaderboard,
+    preset: string,
+    apiUrl: string,
+  ) {
+    const level = preset.replace('seed_franco_', '');
+    const url = `${apiUrl}/franco?level=${level}`;
+    this.logger.log(`Franco fetch: ${url}`);
+    const response = await fetch(url);
+    if (!response.ok)
+      throw new Error(`API responded with status: ${response.status}`);
+    const data = (await response.json()) as FrancoApiResponse;
+    const francoOptions = JSON.stringify(
+      data.options.map(({ label, description, settingsToApply }) => ({
+        label,
+        description,
+        settingsToApply,
+      })),
+    );
+    const newSeed = this.seedRepository.create({
+      seedUrl: data.seed.seedUrl,
+      preset,
+      version: data.seed.version,
+      settings: JSON.stringify(data.seed.usedSettings),
+      francoOptions,
+      isActive: true,
+      leaderboard,
+    });
+    await this.seedRepository.save(newSeed);
+    this.logger.log(
+      `New seed generated for "${leaderboard.name}": ${data.seed.seedUrl}`,
+    );
+    void this.discordService.notifySeedGenerated(
+      leaderboard.name,
+      preset,
+      this.getNextSeedDate(),
+    );
   }
 }

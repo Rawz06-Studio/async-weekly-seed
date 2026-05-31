@@ -18,6 +18,10 @@ const PRESET_DESCRIPTIONS: Record<string, string> = {
     'Mixed Pools — all entrances are randomised across the board, turning every seed into an unpredictable adventure where nothing is where you expect it.',
   seed_rsl:
     'Random Settings League — each seed rolls a random combination of settings, keeping every run fresh. Currently running Season 7; presets will be updated as soon as Season 8 is announced.',
+  seed_franco_easy:
+    'Francophone Tournament (Easy) — the French-speaking community tournament preset on easy difficulty, with randomly drawn options applied to each seed.',
+  seed_franco_hard:
+    'Francophone Tournament (Hard) — the French-speaking community tournament preset on hard difficulty, with randomly drawn options applied to each seed.',
 };
 
 @Injectable()
