@@ -162,6 +162,10 @@
         const lbIds = cfg.lbIds ? cfg.lbIds.split(',').map(Number) : [];
         const STORAGE_KEY = 'ootAsyncRulesetsLb';
 
+        const BASE = 'font-cinzel text-xs tracking-widest uppercase px-5 py-2 rounded-full border transition-colors duration-200 whitespace-nowrap';
+        const ACTIVE = 'bg-amber-600 dark:bg-amber-500 text-white border-amber-600 dark:border-amber-500';
+        const INACTIVE = 'bg-transparent text-stone-500 dark:text-gray-400 border-stone-200 dark:border-gray-700 hover:border-amber-400 dark:hover:border-amber-600 hover:text-amber-700 dark:hover:text-amber-400';
+
         function switchTab(id) {
             lbIds.forEach(function(lbId) {
                 const panel = document.getElementById('panel-' + lbId);
@@ -169,20 +173,7 @@
                 if (!panel || !btn) return;
                 const active = lbId === id;
                 panel.classList.toggle('hidden', !active);
-                btn.className = btn.className
-                    .replace(/bg-amber-600[^\s]*/g, '')
-                    .replace(/dark:bg-amber-500[^\s]*/g, '')
-                    .replace(/text-white[^\s]*/g, '')
-                    .replace(/border-amber-600[^\s]*/g, '')
-                    .replace(/dark:border-amber-500[^\s]*/g, '')
-                    .replace(/text-stone-500[^\s]*/g, '')
-                    .replace(/dark:text-gray-400[^\s]*/g, '')
-                    .replace(/\s+/g, ' ').trim();
-                if (active) {
-                    btn.classList.add('bg-amber-600', 'dark:bg-amber-500', 'text-white', 'border-amber-600', 'dark:border-amber-500');
-                } else {
-                    btn.classList.add('text-stone-500', 'dark:text-gray-400');
-                }
+                btn.className = BASE + ' ' + (active ? ACTIVE : INACTIVE);
             });
             try { sessionStorage.setItem(STORAGE_KEY, String(id)); } catch(e) {}
         }
