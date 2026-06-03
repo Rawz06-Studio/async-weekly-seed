@@ -33,8 +33,8 @@ importers:
         specifier: 4.4.0
         version: 4.4.0
       ejs:
-        specifier: ^5.0.2
-        version: 5.0.2
+        specifier: ^6.0.1
+        version: 6.0.1
       pg:
         specifier: ^8.20.0
         version: 8.21.0
@@ -1636,8 +1636,8 @@ packages:
   ee-first@1.1.1:
     resolution: {integrity: sha512-WMwm9LhRUo+WUaRN+vRuETqG89IgZphVSNkdFgeb6sS/E4OrDIN7t48CAewSHXc6C8lefD8KKfr5vY61brQlow==}
 
-  ejs@5.0.2:
-    resolution: {integrity: sha512-IpbUaI/CAW86l3f+T8zN0iggSc0LmMZLcIW5eRVStLVNCoTXkE0YlncbbH50fp8Cl6zHIky0sW2uUbhBqGw0Jw==}
+  ejs@6.0.1:
+    resolution: {integrity: sha512-UaaM14yby8U3k02ihS1Bmj5Kz2d7CCQM1scxpgs4Mhkq8F1wR2gl3+Ts4h5Ne4Mnt7M9m4Dw7jsuMr3+xO4vZA==}
     engines: {node: '>=0.12.18'}
     hasBin: true
 
@@ -2714,8 +2714,8 @@ packages:
   react-is@18.3.1:
     resolution: {integrity: sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==}
 
-  react-is@19.2.6:
-    resolution: {integrity: sha512-XjBR15BhXuylgWGuslhDKqlSayuqvqBX91BP8pauG8kd1zY8kotkNWbXksTCNRarse4kuGbe2kIY05ARtwNIvw==}
+  react-is@19.2.7:
+    resolution: {integrity: sha512-kZFnouyVv7eP/Phmrlo9FK+zcAdriZJvzxXHF1Sl1P377WSGe2G/JxVolhTrB/jeV47lKImhNUsijjHAAbcl/A==}
 
   readable-stream@3.6.2:
     resolution: {integrity: sha512-9u/sniCrY3D5WdsERHzHE4G2YCXqoG5FTHUiCC4SIbr6XcLZBY05ya9EKjYek9O5xOAwjGq+1JdGBAS7Q9ScoA==}
@@ -5043,7 +5043,7 @@ snapshots:
 
   ee-first@1.1.1: {}
 
-  ejs@5.0.2: {}
+  ejs@6.0.1: {}
 
   electron-to-chromium@1.5.364: {}
 
@@ -6244,7 +6244,7 @@ snapshots:
       '@jest/schemas': 30.4.1
       ansi-styles: 5.2.0
       react-is-18: react-is@18.3.1
-      react-is-19: react-is@19.2.6
+      react-is-19: react-is@19.2.7
 
   proxy-addr@2.0.7:
     dependencies:
@@ -6270,7 +6270,7 @@ snapshots:
 
   react-is@18.3.1: {}
 
-  react-is@19.2.6: {}
+  react-is@19.2.7: {}
 
   readable-stream@3.6.2:
     dependencies:
