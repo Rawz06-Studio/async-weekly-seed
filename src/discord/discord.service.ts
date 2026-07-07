@@ -5,6 +5,7 @@ const PRESET_COLORS: Record<string, number> = {
   seed_s9: 0xd97706,
   seed_tot: 0x7c3aed,
   seed_mixed: 0x059669,
+  seed_rot: 0x0d9488,
   seed_rsl: 0xdc2626,
   seed_franco_easy: 0x22c55e,
   seed_franco_hard: 0xef4444,
