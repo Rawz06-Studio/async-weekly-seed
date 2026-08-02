@@ -41,7 +41,20 @@ export class LeaderboardService {
   ) {}
 
   async getAll(): Promise<Leaderboard[]> {
-    return this.leaderboardRepository.find({ order: { id: 'ASC' } });
+    return this.leaderboardRepository.find({
+      where: { isActive: true },
+      order: { id: 'ASC' },
+    });
+  }
+
+  async toggleActive(id: number): Promise<Leaderboard> {
+    const lb = await this.leaderboardRepository.findOneByOrFail({ id });
+    lb.isActive = !lb.isActive;
+    await this.leaderboardRepository.save(lb);
+    this.logger.log(
+      `Leaderboard "${lb.name}" is now ${lb.isActive ? 'active' : 'inactive'}`,
+    );
+    return lb;
   }
 
   async ensureDefaultLeaderboard(): Promise<void> {
@@ -126,7 +139,7 @@ export class LeaderboardService {
   }
 
   async fillAllQueues(): Promise<void> {
-    const leaderboards = await this.leaderboardRepository.find();
+    const leaderboards = await this.getAll();
     for (const lb of leaderboards) {
       await this.fillQueue(lb);
     }

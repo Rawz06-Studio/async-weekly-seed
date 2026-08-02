@@ -13,6 +13,9 @@ export class Leaderboard {
   @Column({ type: 'text' })
   presetWeights!: string;
 
+  @Column({ default: true })
+  isActive!: boolean;
+
   @OneToMany(() => WeeklySeed, (seed) => seed.leaderboard)
   seeds!: WeeklySeed[];
 

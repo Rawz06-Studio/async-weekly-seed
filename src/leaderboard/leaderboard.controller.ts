@@ -1,4 +1,4 @@
-import { Controller, Get, Render } from '@nestjs/common';
+import { Controller, Get, Param, Post, Render, Redirect } from '@nestjs/common';
 import { LeaderboardService } from './leaderboard.service';
 
 @Controller()
@@ -11,5 +11,11 @@ export class LeaderboardController {
     return {
       leaderboards: await this.leaderboardService.getLeaderboardsWithRulesets(),
     };
+  }
+
+  @Post('admin/leaderboards/:id/toggle')
+  @Redirect('/')
+  async toggleLeaderboard(@Param('id') id: number) {
+    await this.leaderboardService.toggleActive(id);
   }
 }
