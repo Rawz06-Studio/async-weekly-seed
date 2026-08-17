@@ -3,6 +3,8 @@ FROM node:22-alpine AS build
 
 WORKDIR /app
 
+RUN corepack enable
+
 # Install pnpm
 RUN npm install -g pnpm
 
@@ -26,6 +28,8 @@ RUN npm run build
 
 # Production image
 FROM node:22-alpine
+
+RUN corepack enable
 
 WORKDIR /app
 
