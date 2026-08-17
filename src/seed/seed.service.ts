@@ -111,7 +111,7 @@ export class SeedService implements OnModuleInit {
     return this.seedRepository.find({
       where: { isActive: false },
       order: { createdAt: 'DESC' },
-      relations: ['scores'],
+      relations: { scores: true },
     });
   }
 
