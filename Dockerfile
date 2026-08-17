@@ -5,9 +5,6 @@ WORKDIR /app
 
 RUN corepack enable
 
-# Install pnpm
-RUN npm install -g pnpm
-
 # Copy package files
 COPY package.json pnpm-lock.yaml ./
 
@@ -27,14 +24,9 @@ RUN mkdir -p public
 RUN npm run build
 
 # Production image
-FROM node:22-alpine
-
-RUN corepack enable
+FROM node:24-alpine
 
 WORKDIR /app
-
-# Install pnpm for production install if needed, or just copy node_modules
-RUN npm install -g pnpm
 
 # Copy built assets and necessary files
 COPY --from=build /app/dist ./dist
